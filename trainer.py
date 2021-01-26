@@ -7,6 +7,7 @@ import lib.model
 import lib.evaluation
 import argparse
 import numpy as np
+import time
 
 default_seed = 1
 default_epochs = 10
@@ -42,6 +43,7 @@ model = model.cuda()
 optimizer = optim.RMSprop(model.parameters(), lr=learning_rate, weight_decay=decay)
 
 for epoch in range(epochs):
+    t0 = time.time()
     model.train()
     for data, target in train_loader:
         data = data.cuda()
@@ -49,16 +51,17 @@ for epoch in range(epochs):
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
-        optimizer.step()
         loss.backward()
+        optimizer.step()
 
         prediction = output.data.max(1)[1]   # first column has actual prob.
         accuracy = np.mean(prediction.eq(target.data).cpu().numpy())*100
 
+    # measure training time
+    elapsed = time.time() - t0
+
     # validate
     val_accuracy, _ = lib.evaluation.evaluate(model, test_loader)
 
-    print('Epoch: {}\tLoss: {:.3f}\tAcc: {:.3f}\tVal Acc: {:.3f}'.format(epoch,
-                                                                np.mean(loss.item()),
-                                                                np.mean(accuracy),
-                                                                val_accuracy))
+    print('Epoch: {}\tTrain Sec: {:0.3f}\tLoss: {:.3f}\tAcc: {:.3f}\tVal Acc: {:.3f}'
+            .format(epoch, elapsed, np.mean(loss.item()), np.mean(accuracy), val_accuracy))

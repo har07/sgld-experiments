@@ -1,4 +1,3 @@
-import sgld
 import torch
 import numpy as np
 from torch.autograd import Variable
@@ -10,7 +9,6 @@ def evaluate(model, test_loader):
     
     with torch.no_grad():
         for data, target in test_loader:
-            data, target = Variable(data, volatile=True), Variable(target, volatile=True)
             data = data.cuda()
             target = target.cuda()
             output = model(data)
