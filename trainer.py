@@ -1,12 +1,12 @@
 import random
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 import lib.dataset
 import lib.model
+import lib.evaluation
 import argparse
-from backpack import extend
-from backpack import backpack
-from backpack.extensions import KFAC
+import numpy as np
 
 default_seed = 1
 default_epochs = 10
@@ -38,17 +38,8 @@ random.seed(seed)
 model = lib.model.MnistModel()
 train_loader, test_loader = lib.dataset.make_datasets()
 model = model.cuda()
-model = extend(model)
-criterion = torch.nn.NLLLoss()
-criterion = extend(criterion)
 
 optimizer = optim.RMSprop(model.parameters(), lr=learning_rate, weight_decay=decay)
-
-def print_params(model):
-    for name, param in model.named_parameters():
-        print(name)
-        print(".grad.shape:             ", param.grad.shape)
-        print(".kfac (shapes):          ", [kfac.shape for kfac in param.kfac])
 
 for epoch in range(epochs):
     model.train()
@@ -57,8 +48,17 @@ for epoch in range(epochs):
         target = target.cuda()
         optimizer.zero_grad()
         output = model(data)
-        loss = criterion(output, target)
-        with backpack(KFAC()):
-            loss.backward()
+        loss = F.nll_loss(output, target)
         optimizer.step()
-        print_params(model)
+        loss.backward()
+
+        prediction = output.data.max(1)[1]   # first column has actual prob.
+        accuracy = np.mean(prediction.eq(target.data).cpu().numpy())*100
+
+    # validate
+    val_accuracy, _ = lib.evaluation.evaluate(model, test_loader)
+
+    print('Epoch: {}\tLoss: {:.3f}\tAcc: {:.3f}\tVal Acc: {:.3f}'.format(epoch,
+                                                                np.mean(loss.item()),
+                                                                np.mean(accuracy),
+                                                                val_accuracy))
