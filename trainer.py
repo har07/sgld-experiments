@@ -7,6 +7,7 @@ import lib.dataset
 import lib.model
 import lib.evaluation
 import lib.sgd
+import lib.sgld
 import lib.ekfac_precond
 import lib.kfac_precond
 import lib.asgld
@@ -65,9 +66,10 @@ model = model.cuda()
 
 # optimizer = optim.RMSprop(model.parameters(), lr=learning_rate, weight_decay=decay)
 # optimizer = optim.SGD(model.parameters(), lr=learning_rate)
-optimizer = lib.asgld.ASGLD(model.parameters(), lr=learning_rate)
-print('addnoise: ', noise)
+# optimizer = lib.asgld.ASGLD(model.parameters(), lr=learning_rate)
+# print('addnoise: ', noise)
 # optimizer = lib.sgd.SGD(model.parameters(), lr=learning_rate, addnoise=noise)
+optimizer = lib.sgld.SGLD(model.parameters(), lr=learning_rate)
 precond = None
 if use_precond:
     if use_precond == "EKFAC":
