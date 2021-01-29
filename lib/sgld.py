@@ -60,7 +60,7 @@ class SGLD(Optimizer):
             lr=lr, precondition_decay_rate=precondition_decay_rate,
             num_pseudo_batches=num_pseudo_batches,
             num_burn_in_steps=num_burn_in_steps,
-            diagonal_bias=1e-8,
+            diagonal_bias=1e-8, vanilla=vanilla,
         )
         super().__init__(params, defaults)
 
