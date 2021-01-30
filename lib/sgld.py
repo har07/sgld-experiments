@@ -108,7 +108,7 @@ class SGLD(Optimizer):
                     sigma = torch.zeros_like(parameter)
 
                 if vanilla:
-                    preconditioner = 1.
+                    preconditioner = torch.ones_like(gradient)
                 else:
                     preconditioner = (
                         1. / torch.sqrt(momentum + group["diagonal_bias"])

@@ -1,16 +1,27 @@
 seed: 1
 epoch: 10
-learning_rate: 0.5
-optimizer: sgld
-sgld.SGLD:
+optimizer: optim.SGD
+optim.SGD:
+  lr: 1.e-1
+optim.RMSprop:
+  lr: 5.e-4
+  weight_decay: 1.e-2
+pysgmcmc_sgld.SGLD:
+  lr: 5.e-4 # for pSGLD
   precondition_decay_rate: .95 # Exponential decay rate of the rescaling of the preconditioner (RMSprop)
-  burn_in: 10
-  diagonal_bias: 1e-8 # TODO: check if this parsed correctly by pyYaml
+  num_burn_in_steps: 10
+  diagonal_bias: 1.e-8
+sgld.SGLD:
+  # lr: 5.e-4 # for vanilla SGLD
+  lr: 99.e-2 # for pSGLD
+  precondition_decay_rate: .95 # Exponential decay rate of the rescaling of the preconditioner (RMSprop)
+  num_burn_in_steps: 10
+  diagonal_bias: 1.e-8
   vanilla: False
 asgld.ASGLD:
   momentum: .9
-  weight_decay: 5e-4
-  eps: 1e-6
+  weight_decay: 5.e-4
+  eps: 1.e-6
   noise: 0.1
 ksgld.KSGLD:
   eps: 0.01   # Tikhonov regularization

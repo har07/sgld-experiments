@@ -11,18 +11,13 @@ import lib.sgld as sgld
 import lib.ekfac_precond
 import lib.kfac_precond
 import lib.asgld as asgld
+import pysgmcmc.optimizers.sgld as pysgmcmc_sgld
 import argparse
 import numpy as np
 import time
 import yaml
 
 default_yaml =  "config.yaml"
-default_seed = 1
-default_epochs = 10
-default_lr = 0.9
-default_decay = 0.01
-default_epsilon = 0.01
-default_noise = False
 
 parser = argparse.ArgumentParser(
                     description="Trains and saves neural network for "
@@ -35,11 +30,10 @@ args = parser.parse_args()
 yaml_path = str(args.yaml)
 
 with open('config.yaml') as f:
-    config = yaml.load(f, Loader=yaml.FullLoader)
+    config = yaml.load(f, Loader=yaml.Loader)
 
 seed = config['seed']
 epochs = config['epoch']
-learning_rate = config['learning_rate']
 optimizer_name = config['optimizer']
 
 dataset_params = config['dataset']
@@ -53,13 +47,15 @@ model = lib.model.MnistModel()
 train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
 model = model.cuda()
 
-optim_params = {'lr': learning_rate}
+optim_params = {}
 if optimizer_name in config:
     optim_params2 = config[optimizer_name]
-    for k,v in optim_params2:
+    for k in optim_params2:
+        v = optim_params2[k]
         if v:
-            optim_params[k] = v 
-            
+            optim_params[k] = v
+
+print('optimizer params: ', optim_params)
 optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
 
 
