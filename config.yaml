@@ -19,6 +19,7 @@ sgld.SGLD:
   diagonal_bias: 1.e-8
   vanilla: False
 asgld.ASGLD:
+  lr: 5.e-1
   momentum: .9
   weight_decay: 5.e-4
   eps: 1.e-6

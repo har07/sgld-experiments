@@ -60,7 +60,7 @@ class ASGLD(Optimizer):
                     state['step'] = 0
                     
                 
-                mean = state['mean'] # Works now
+                mean = state['mean'] #   Works now
                 var = state['variance']
                 std = state['std']
                 
@@ -72,10 +72,10 @@ class ASGLD(Optimizer):
                 
                 
                 # Calculating gradients
-                if state['step'] == 2:
-                    print('generate noise from mean: ', old_mean, ' and std: ', old_std)
+                # if state['step'] == 2:
+                #     print('generate noise from mean: ', old_mean, ' and std: ', old_std)
                 new_updt = torch.normal(mean=old_mean, std=old_std)
-                updt = grad.add(group['noise'],new_updt)
+                updt = grad.add(new_updt, alpha=group['noise'])
                 if weight_decay != 0:
                     updt.add_(weight_decay, p.data)
 
