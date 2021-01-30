@@ -54,10 +54,12 @@ train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=te
 model = model.cuda()
 
 optim_params = {'lr': learning_rate}
-optim_params2 = config[optimizer_name]
-for k,v in optim_params2:
-    if v:
-        optim_params[k] = v 
+if optimizer_name in config:
+    optim_params2 = config[optimizer_name]
+    for k,v in optim_params2:
+        if v:
+            optim_params[k] = v 
+            
 optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
 
 
