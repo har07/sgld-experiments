@@ -1,0 +1,77 @@
+import logging
+import sys
+import lib.sgld as sgld
+
+import optuna
+from optuna.visualization import plot_optimization_history
+
+def train(epochs, train_loader, test_loader):
+    for epoch in range(epochs):
+        for data, target in train_loader:
+            batch += 1
+            data = data.cuda()
+            target = target.cuda()
+            optimizer.zero_grad()
+            output = model(data)
+            loss = F.nll_loss(output, target)
+            loss.backward()
+            optimizer.step()
+
+        # validate
+        val_accuracy, _ = lib.evaluation.evaluate(model, test_loader)
+    return val_accuracy
+
+def objective(trial):
+    seed = 1
+    epochs = 5
+    train_batch = 50
+    test_batch = 50
+
+    torch.cuda.set_device(0)
+    torch.manual_seed(seed)
+    random.seed(seed)
+    model = lib.model.MnistModel()
+    train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
+    model = model.cuda()
+
+    # hyperparams search space
+    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+    burn_in = trial.suggest_int("num_burn_in_steps", 10, 1000, step=30)
+    optimizer = sgld.SGLD(model.parameters(), lr=lr, num_burn_in_steps=burn_in)
+
+    model.train()
+    accuracy = train(epochs, train_loader, test_loader)
+    return accuracy
+
+def print_stats(study):
+    pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
+    complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
+
+    print("Study statistics: ")
+    print("  Number of finished trials: ", len(study.trials))
+    print("  Number of pruned trials: ", len(pruned_trials))
+    print("  Number of complete trials: ", len(complete_trials))
+
+    print("Best trial:")
+    trial = study.best_trial
+
+    print("  Value: ", trial.value)
+
+    print("  Params: ")
+    for key, value in trial.params.items():
+        print("    {}: {}".format(key, value))
+
+def main():
+    # Add stream handler of stdout to show the messages
+    optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+    study_name = "sgld-study"  # Unique identifier of the study.
+    storage_name = "sqlite:///{}.db".format(study_name)
+    study = optuna.create_study(study_name=study_name, storage=storage_name, direction="maximize")
+    study.optimize(objective, n_trials=50)
+
+    print_stats(study)
+    
+    plot_optimization_history(study)
+
+if __name__ == "__main__":
+    main()

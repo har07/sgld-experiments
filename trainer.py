@@ -18,6 +18,7 @@ import time
 import yaml
 
 default_yaml =  "config.yaml"
+default_silent = False
 
 parser = argparse.ArgumentParser(
                     description="Trains and saves neural network for "
@@ -25,9 +26,13 @@ parser = argparse.ArgumentParser(
 parser.add_argument("-y", "--yaml",
                     help="yaml config file location",
                     default=default_yaml)
+parser.add_argument("-s", "--silent",
+                    help="if True, do not print per epoch accuracy",
+                    default=default_yaml)
 
 args = parser.parse_args()
 yaml_path = str(args.yaml)
+silent = bool(args.silent)
 
 with open('config.yaml') as f:
     config = yaml.load(f, Loader=yaml.Loader)
@@ -82,5 +87,6 @@ for epoch in range(epochs):
     # validate
     val_accuracy, _ = lib.evaluation.evaluate(model, test_loader)
 
-    print('Epoch: {}\tTrain Sec: {:0.3f}\tLoss: {:.3f}\tAcc: {:.3f}\tVal Acc: {:.3f}'
-            .format(epoch, elapsed, np.mean(loss.item()), np.mean(accuracy), val_accuracy))
+    if not silent:
+        print('Epoch: {}\tTrain Sec: {:0.3f}\tLoss: {:.3f}\tAcc: {:.3f}\tVal Acc: {:.3f}'
+                .format(epoch, elapsed, np.mean(loss.item()), np.mean(accuracy), val_accuracy))
