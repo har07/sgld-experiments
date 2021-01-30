@@ -2,7 +2,7 @@ import torch.utils
 from torchvision import datasets, transforms
 from .preproc import NoiseTransform
 
-def make_datasets(bs=1024, test_bs=4096, noise=0):
+def make_datasets(bs=50, test_bs=4096, noise=0):
     train_loader = torch.utils.data.DataLoader(
         datasets.MNIST('data',
             train=True,

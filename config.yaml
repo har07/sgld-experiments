@@ -1,0 +1,30 @@
+seed: 1
+epoch: 10
+learning_rate: 0.5
+optimizer: sgld
+sgld.SGLD:
+  precondition_decay_rate: .95 # Exponential decay rate of the rescaling of the preconditioner (RMSprop)
+  burn_in: 10
+  diagonal_bias: 1e-8 # TODO: check if this parsed correctly by pyYaml
+  vanilla: False
+asgld.ASGLD:
+  momentum: .9
+  weight_decay: 5e-4
+  eps: 1e-6
+  noise: 0.1
+ksgld.KSGLD:
+  eps: 0.01   # Tikhonov regularization
+  sua: False  # Applies SUA approximation.
+  pi: False   # pi conrrection for Tikhonov regularization
+  update_freq: 10
+  alpha: 1.   # Running average parameter (if == 1, no r. ave.).
+  constraint_norm: False  # Scale the gradients by the squared fisher norm.
+eksgld.EKSGLD:
+  eps: 0.01 # Tikhonov regularization
+  sua: False
+  ra: False # Computes stats using a running average of averaged gradients instead of using a intra minibatch estimate
+  update_freq: 10
+  alpha: 1. # Running average parameter (if == 1, no r. ave.).
+dataset:
+  train_batch: 50
+  test_batch: 50
