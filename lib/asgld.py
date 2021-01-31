@@ -85,9 +85,9 @@ class ASGLD(Optimizer):
                 part_var1 = grad.add(-old_mean)
                 part_var2 = grad.add(-mean)
                 
-                new_std = torch.pow(old_std,2).mul(group['momentum']).addcmul(1,part_var1,part_var2).add(group['eps'])                
+                new_std = torch.pow(old_std,2).mul(group['momentum']).addcmul(part_var1,part_var2).add(group['eps'])                
                 new_std = torch.pow(torch.abs_(new_std),1/2)
-                std.add_(-1,std).add_(new_std)
+                std.add_(std, alpha=-1).add_(new_std)
                 
 		
                 
