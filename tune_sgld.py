@@ -7,9 +7,23 @@ import lib.dataset
 import lib.model
 import lib.evaluation
 import lib.sgld as sgld
+import argparse
 
 import optuna
 from optuna.visualization import plot_optimization_history
+
+default_study = "sgld-study"
+
+parser = argparse.ArgumentParser(
+                    description="Perform  hyperparameter tuning of SGLD optimizer"
+                                "for MNIST classification.")
+parser.add_argument("-s", "--study",
+                    help="hyperparam optimization study name. determine database file "+
+                         "to save to.",
+                    default=default_study)
+
+args = parser.parse_args()
+study_name = str(args.study)
 
 def train(model, optimizer, train_loader, test_loader, epochs):
     for _ in range(epochs):
@@ -69,9 +83,8 @@ def print_stats(study):
 def main():
     # Add stream handler of stdout to show the messages
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
-    study_name = "sgld-study"  # Unique identifier of the study.
     storage_name = "sqlite:///{}.db".format(study_name)
-    study = optuna.create_study(study_name=study_name, storage=storage_name, direction="maximize")
+    study = optuna.create_study(study_name=study_name, storage=storage_name, load_if_exists=True, direction="maximize")
     study.optimize(objective, n_trials=50)
 
     print_stats(study)
