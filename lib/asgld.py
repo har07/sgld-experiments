@@ -77,7 +77,7 @@ class ASGLD(Optimizer):
                 new_updt = torch.normal(mean=old_mean, std=old_std)
                 updt = grad.add(new_updt, alpha=group['noise'])
                 if weight_decay != 0:
-                    updt.add_(weight_decay, p.data)
+                    updt.add_(p.data, alpha=weight_decay)
 
                 # Updating mean
                 mean = mean.mul(group['momentum']).add(updt)
@@ -91,7 +91,7 @@ class ASGLD(Optimizer):
                 
 		
                 
-                p.data.add_(-group['lr'],updt)
+                p.data.add_(updt, alpha=-group['lr'])
                 
         
         return loss

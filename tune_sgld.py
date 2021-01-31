@@ -11,7 +11,6 @@ import argparse
 import datetime
 
 import optuna
-from optuna.visualization import plot_optimization_history
 
 default_trial = 50
 
@@ -62,7 +61,8 @@ def objective(trial):
     model = model.cuda()
 
     # hyperparams search space
-    optimizer = sgld_optimizer(model.parameters(), trial)
+    # optimizer = sgld_optimizer(model.parameters(), trial)
+    optimizer = psgld_optimizer(model.parameters(), trial)
 
     accuracy = train(model, optimizer, train_loader, test_loader, epochs)
     return accuracy
@@ -89,7 +89,23 @@ def sgld_optimizer(params, trial):
     # hyperparams search space
     lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
     burn_in = trial.suggest_int("num_burn_in_steps", 10, 1000, step=30)
-    optimizer = sgld.SGLD(params, lr=lr, num_burn_in_steps=burn_in)
+    optimizer = sgld.SGLD(params, lr=lr, num_burn_in_steps=burn_in, vanilla=True)
+    return optimizer
+
+def psgld_optimizer(params, trial):
+    lr = trial.suggest_loguniform("lr", 1e-3, 1.)
+    burn_in = trial.suggest_int("num_burn_in_steps", 10, 1000, step=30)
+    decay_rate = trial.suggest_uniform("precondition_decay_rate", 5e-1, 1.)
+    optimizer = sgld.SGLD(params, lr=lr, num_burn_in_steps=burn_in, precondition_decay_rate=decay_rate)
+    return optimizer
+
+def asgld_optimizer(params, trial):
+    lr = trial.suggest_loguniform("lr", 1e-2, 1.)
+    momentum = trial.suggest_uniform("momentum", .1, 1.)
+    weight_decay = trial.suggest_loguniform("weight_decay", 5e-4, 1e-1)
+    eps = trial.suggest_loguniform("eps", 1e-6, 1e-1)
+    noise = trial.suggest_uniform("noise", 1e-2, 1.)
+    optimizer = sgld.SGLD(params, lr=lr, momentum=momentum, weight_decay=weight_decay, eps=eps, noise=noise)
     return optimizer
 
 def main():
@@ -100,8 +116,6 @@ def main():
     study.optimize(objective, n_trials=trials)
 
     print_stats(study)
-
-    plot_optimization_history(study)
 
 if __name__ == "__main__":
     main()
