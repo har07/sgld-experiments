@@ -12,10 +12,9 @@ import optuna
 from optuna.visualization import plot_optimization_history
 
 def train(model, optimizer, train_loader, test_loader, epochs):
-    for epoch in range(epochs):
+    for _ in range(epochs):
         model.train()
         for data, target in train_loader:
-            batch += 1
             data = data.cuda()
             target = target.cuda()
             optimizer.zero_grad()
