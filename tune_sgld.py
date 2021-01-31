@@ -1,12 +1,19 @@
 import logging
+import random
 import sys
+import torch
+import torch.nn.functional as F
+import lib.dataset
+import lib.model
+import lib.evaluation
 import lib.sgld as sgld
 
 import optuna
 from optuna.visualization import plot_optimization_history
 
-def train(epochs, train_loader, test_loader):
+def train(model, optimizer, train_loader, test_loader, epochs):
     for epoch in range(epochs):
+        model.train()
         for data, target in train_loader:
             batch += 1
             data = data.cuda()
@@ -39,8 +46,7 @@ def objective(trial):
     burn_in = trial.suggest_int("num_burn_in_steps", 10, 1000, step=30)
     optimizer = sgld.SGLD(model.parameters(), lr=lr, num_burn_in_steps=burn_in)
 
-    model.train()
-    accuracy = train(epochs, train_loader, test_loader)
+    accuracy = train(model, optimizer, train_loader, test_loader, epochs)
     return accuracy
 
 def print_stats(study):
@@ -70,7 +76,7 @@ def main():
     study.optimize(objective, n_trials=50)
 
     print_stats(study)
-    
+
     plot_optimization_history(study)
 
 if __name__ == "__main__":
