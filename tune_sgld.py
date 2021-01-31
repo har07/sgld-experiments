@@ -7,6 +7,7 @@ import lib.dataset
 import lib.model
 import lib.evaluation
 import lib.sgld as sgld
+import lib.asgld as asgld
 import argparse
 import datetime
 
@@ -93,19 +94,19 @@ def sgld_optimizer(params, trial):
     return optimizer
 
 def psgld_optimizer(params, trial):
-    lr = trial.suggest_loguniform("lr", 1e-3, 1.)
+    lr = trial.suggest_loguniform("lr", 1e-3, .99)
     burn_in = trial.suggest_int("num_burn_in_steps", 10, 1000, step=30)
-    decay_rate = trial.suggest_uniform("precondition_decay_rate", 5e-1, 1.)
+    decay_rate = trial.suggest_uniform("precondition_decay_rate", 5e-1, .99)
     optimizer = sgld.SGLD(params, lr=lr, num_burn_in_steps=burn_in, precondition_decay_rate=decay_rate)
     return optimizer
 
 def asgld_optimizer(params, trial):
-    lr = trial.suggest_loguniform("lr", 1e-2, 1.)
-    momentum = trial.suggest_uniform("momentum", .1, 1.)
+    lr = trial.suggest_loguniform("lr", 1e-2, .99)
+    momentum = trial.suggest_uniform("momentum", .1, .99)
     weight_decay = trial.suggest_loguniform("weight_decay", 5e-4, 1e-1)
     eps = trial.suggest_loguniform("eps", 1e-6, 1e-1)
-    noise = trial.suggest_uniform("noise", 1e-2, 1.)
-    optimizer = sgld.SGLD(params, lr=lr, momentum=momentum, weight_decay=weight_decay, eps=eps, noise=noise)
+    noise = trial.suggest_uniform("noise", 1e-2, .99)
+    optimizer = asgld.ASGLD(params, lr=lr, momentum=momentum, weight_decay=weight_decay, eps=eps, noise=noise)
     return optimizer
 
 def main():
