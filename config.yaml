@@ -1,6 +1,6 @@
 seed: 1
-epoch: 10
-optimizer: optim.SGD
+epoch: 20
+optimizer: sgld.SGLD
 optim.SGD:
   lr: 1.e-1
 optim.RMSprop:
@@ -12,12 +12,12 @@ pysgmcmc_sgld.SGLD:
   num_burn_in_steps: 10
   diagonal_bias: 1.e-8
 sgld.SGLD:
-  # lr: 5.e-4 # for vanilla SGLD
-  lr: 99.e-2 # for pSGLD
+  lr: 0.0005005742963403476 # for vanilla SGLD
+  # lr: 99.e-2 # for pSGLD
   precondition_decay_rate: .95 # Exponential decay rate of the rescaling of the preconditioner (RMSprop)
-  num_burn_in_steps: 10
+  num_burn_in_steps: 610
   diagonal_bias: 1.e-8
-  vanilla: False
+  vanilla: True
 asgld.ASGLD:
   lr: 5.e-1
   momentum: .9

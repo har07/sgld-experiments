@@ -16,9 +16,13 @@ import argparse
 import numpy as np
 import time
 import yaml
+import datetime
+from torch.utils.tensorboard import SummaryWriter
 
 default_yaml =  "config.yaml"
 default_silent = False
+save_model_path = "/content/kfac-backpack"
+session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 parser = argparse.ArgumentParser(
                     description="Trains and saves neural network for "
@@ -28,7 +32,7 @@ parser.add_argument("-y", "--yaml",
                     default=default_yaml)
 parser.add_argument("-s", "--silent",
                     help="if True, do not print per epoch accuracy",
-                    default=default_yaml)
+                    default=default_silent)
 
 args = parser.parse_args()
 yaml_path = str(args.yaml)
@@ -63,13 +67,14 @@ if optimizer_name in config:
 print('optimizer params: ', optim_params)
 optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
 
+writer = SummaryWriter()
 
+step = 0
 for epoch in range(epochs):
     t0 = time.time()
     model.train()
-    batch = 0
     for data, target in train_loader:
-        batch += 1
+        step += 1
         data = data.cuda()
         target = target.cuda()
         optimizer.zero_grad()
@@ -86,7 +91,14 @@ for epoch in range(epochs):
 
     # validate
     val_accuracy, _ = lib.evaluation.evaluate(model, test_loader)
+    writer.add_scalar("Loss/train", np.mean(loss.item()), epoch)
+    writer.add_scalar("Acc/train", val_accuracy, epoch)
+    writer.add_scalar("TAcc/train", np.mean(accuracy), epoch)
 
     if not silent:
         print('Epoch: {}\tTrain Sec: {:0.3f}\tLoss: {:.3f}\tAcc: {:.3f}\tVal Acc: {:.3f}'
                 .format(epoch, elapsed, np.mean(loss.item()), np.mean(accuracy), val_accuracy))
+
+# Save the model weights.
+torch.save(model.state_dict(), save_model_path + "/" + session_id+".pt")
+writer.flush()
