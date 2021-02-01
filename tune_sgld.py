@@ -14,6 +14,7 @@ import datetime
 import optuna
 
 default_trial = 50
+default_epochs = 10
 
 parser = argparse.ArgumentParser(
                     description="Perform  hyperparameter tuning of SGLD optimizer"
@@ -24,6 +25,11 @@ parser.add_argument("-s", "--study",
 parser.add_argument("-t", "--trials",
                     help="number of trials to perform",
                     default=default_trial)
+parser.add_argument("-e", "--epochs",
+                    help="number of epoch to perform",
+                    default=default_epochs)
+parser.add_argument("-o", "--optimizer",
+                    help="optimizer name: sgld, psgld, asgld")
 
 args = parser.parse_args()
 if args.study:
@@ -31,6 +37,10 @@ if args.study:
 else:
     study_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 trials = int(args.trials)
+epochs = int(args.epochs)
+optimizer_name = str(args.optimizer)
+if not optimizer_name in ['sgld', 'psgld', 'asgld']:
+    raise ValueError('optimizer is not supported yet: ' + optimizer_name)
 
 def train(model, optimizer, train_loader, test_loader, epochs):
     for _ in range(epochs):
@@ -50,7 +60,6 @@ def train(model, optimizer, train_loader, test_loader, epochs):
 
 def objective(trial):
     seed = 1
-    epochs = 5
     train_batch = 50
     test_batch = 50
 
@@ -61,9 +70,12 @@ def objective(trial):
     train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
     model = model.cuda()
 
-    # hyperparams search space
-    # optimizer = sgld_optimizer(model.parameters(), trial)
-    optimizer = psgld_optimizer(model.parameters(), trial)
+    if optimizer_name == "sgld":
+        optimizer = sgld_optimizer(model.parameters(), trial)
+    elif optimizer_name == "psgld":
+        optimizer = psgld_optimizer(model.parameters(), trial)
+    elif optimizer_name == "asgld":
+        optimizer = asgld_optimizer(model.parameters(), trial)
 
     accuracy = train(model, optimizer, train_loader, test_loader, epochs)
     return accuracy
