@@ -8,6 +8,7 @@ import lib.model
 import lib.evaluation
 import lib.sgd as sgd
 import lib.sgld as sgld
+import lib.sgld2 as sgld2
 import lib.ekfac_precond
 import lib.kfac_precond
 import lib.asgld as asgld
@@ -64,6 +65,7 @@ if optimizer_name in config:
         if v:
             optim_params[k] = v
 
+print('optimizer: ', optimizer_name)
 print('optimizer params: ', optim_params)
 optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
 

@@ -7,6 +7,7 @@ import lib.dataset
 import lib.model
 import lib.evaluation
 import lib.sgld as sgld
+import lib.sgld2 as sgld2
 import lib.asgld as asgld
 import argparse
 import datetime
@@ -39,7 +40,7 @@ else:
 trials = int(args.trials)
 epochs = int(args.epochs)
 optimizer_name = str(args.optimizer)
-if not optimizer_name in ['sgld', 'psgld', 'asgld']:
+if not optimizer_name in ['sgld', 'sgld2', 'psgld', 'asgld']:
     raise ValueError('optimizer is not supported yet: ' + optimizer_name)
 
 def train(model, optimizer, train_loader, test_loader, epochs):
@@ -72,6 +73,8 @@ def objective(trial):
 
     if optimizer_name == "sgld":
         optimizer = sgld_optimizer(model.parameters(), trial)
+    elif optimizer_name == "sgld2":
+        optimizer = sgld2_optimizer(model.parameters(), trial)
     elif optimizer_name == "psgld":
         optimizer = psgld_optimizer(model.parameters(), trial)
     elif optimizer_name == "asgld":
@@ -97,6 +100,13 @@ def print_stats(study):
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
+
+def sgld2_optimizer(params, trial):
+    # hyperparams search space
+    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+    burn_in = trial.suggest_int("num_burn_in_steps", 10, 1000, step=30)
+    optimizer = sgld2.SGLD(params, lr=lr, num_burn_in_steps=burn_in, addnoise=True)
+    return optimizer
 
 def sgld_optimizer(params, trial):
     # hyperparams search space

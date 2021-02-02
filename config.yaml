@@ -1,6 +1,6 @@
 seed: 1
 epoch: 20
-optimizer: sgld.SGLD
+optimizer: sgld2.SGLD
 optim.SGD:
   lr: 1.e-1
 optim.RMSprop:
@@ -18,6 +18,9 @@ sgld.SGLD:
   num_burn_in_steps: 610
   diagonal_bias: 1.e-8
   vanilla: True
+sgld2.SGLD:
+  lr: 0.0004370793008859514 # for vanilla SGLD
+  num_burn_in_steps: 580
 asgld.ASGLD:
   lr: 5.e-1
   momentum: .9

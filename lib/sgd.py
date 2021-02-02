@@ -121,8 +121,8 @@ class SGD(Optimizer):
                         torch.zeros(size),
                         torch.ones(size) / np.sqrt(group['lr'])
                     )
-                    if self.counter == 1:
-                        print('generate noise from mean 0 and std {0:.3f}'.format(np.sqrt(group['lr'])))
+                    # if self.counter == 1:
+                    #     print('generate noise from mean 0 and std {0:.3f}'.format(np.sqrt(group['lr'])))
                     p.add_(d_p + langevin_noise.sample().cuda(), alpha=-group['lr'])
                 else:
                     p.add_(d_p, alpha=-group['lr'])
