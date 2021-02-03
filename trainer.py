@@ -9,6 +9,7 @@ import lib.evaluation
 import lib.sgd as sgd
 import lib.sgld as sgld
 import lib.sgld2 as sgld2
+import lib.sgld3 as sgld3
 import lib.ekfac_precond
 import lib.kfac_precond
 import lib.asgld as asgld
@@ -44,6 +45,8 @@ with open('config.yaml') as f:
 
 seed = config['seed']
 epochs = config['epoch']
+block_size = config['block_size']
+block_decay = config['block_decay']
 optimizer_name = config['optimizer']
 
 dataset_params = config['dataset']
@@ -72,8 +75,12 @@ optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
 writer = SummaryWriter()
 
 step = 0
+current_lr = optim_params["lr"]
 for epoch in range(epochs):
     t0 = time.time()
+    if block_size > 0 and block_decay > 0 and ((epoch+1) % block_size) == 0:
+        current_lr = current_lr * block_decay
+    print('current_lr: ', current_lr)
     model.train()
     for data, target in train_loader:
         step += 1
@@ -83,7 +90,10 @@ for epoch in range(epochs):
         output = model(data)
         loss = F.nll_loss(output, target)
         loss.backward()
-        optimizer.step()
+        if block_size > 0 and block_decay > 0:
+            optimizer.step(lr=current_lr)
+        else:
+            optimizer.step()
 
         prediction = output.data.max(1)[1]   # first column has actual prob.
         accuracy = np.mean(prediction.eq(target.data).cpu().numpy())*100

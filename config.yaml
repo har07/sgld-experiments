@@ -1,6 +1,8 @@
 seed: 1
-epoch: 20
-optimizer: sgld2.SGLD
+epoch: 100
+block_size: 20
+block_decay: .5
+optimizer: sgld3.SGLD
 optim.SGD:
   lr: 1.e-1
 optim.RMSprop:
@@ -19,8 +21,14 @@ sgld.SGLD:
   diagonal_bias: 1.e-8
   vanilla: True
 sgld2.SGLD:
-  lr: 0.0004370793008859514 # for vanilla SGLD
-  num_burn_in_steps: 580
+  lr: 0.5
+  num_burn_in_steps: 300
+sgld3.SGLD:
+  lr: .1 # .2
+  train_size: 60000
+  lr_decay: 2.e-2
+  weight_decay: 1.67e-5
+  num_burn_in_steps: 300
 asgld.ASGLD:
   lr: 5.e-1
   momentum: .9
@@ -41,5 +49,5 @@ eksgld.EKSGLD:
   update_freq: 10
   alpha: 1. # Running average parameter (if == 1, no r. ave.).
 dataset:
-  train_batch: 50
-  test_batch: 50
+  train_batch: 100
+  test_batch: 100

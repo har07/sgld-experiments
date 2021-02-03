@@ -16,6 +16,7 @@ import optuna
 
 default_trial = 50
 default_epochs = 10
+default_batch = False
 
 parser = argparse.ArgumentParser(
                     description="Perform  hyperparameter tuning of SGLD optimizer"
@@ -30,7 +31,10 @@ parser.add_argument("-e", "--epochs",
                     help="number of epoch to perform",
                     default=default_epochs)
 parser.add_argument("-o", "--optimizer",
-                    help="optimizer name: sgld, psgld, asgld")
+                    help="optimizer name: sgld, sgld2, sgld3, psgld, asgld")
+parser.add_argument("-b", "--batch",
+                    help="tune batch size",
+                    default=default_batch)
 
 args = parser.parse_args()
 if args.study:
@@ -39,6 +43,7 @@ else:
     study_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 trials = int(args.trials)
 epochs = int(args.epochs)
+tune_batch_size = bool(args.batch)
 optimizer_name = str(args.optimizer)
 if not optimizer_name in ['sgld', 'sgld2', 'psgld', 'asgld']:
     raise ValueError('optimizer is not supported yet: ' + optimizer_name)
@@ -61,14 +66,15 @@ def train(model, optimizer, train_loader, test_loader, epochs):
 
 def objective(trial):
     seed = 1
-    train_batch = 50
-    test_batch = 50
+    batch_size = 50
+    if tune_batch_size:
+        batch_size = trial.suggest_int("batch_size", 50, 1000, step=50)
 
     torch.cuda.set_device(0)
     torch.manual_seed(seed)
     random.seed(seed)
     model = lib.model.MnistModel()
-    train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
+    train_loader, test_loader = lib.dataset.make_datasets(bs=batch_size, test_bs=batch_size)
     model = model.cuda()
 
     if optimizer_name == "sgld":
@@ -101,10 +107,17 @@ def print_stats(study):
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
 
+def sgld3_optimizer(params, trial):
+    # hyperparams search space
+    lr = trial.suggest_categorical("lr", [5e-5, 5e-4, 5e-3, 5e-2, .5])
+    burn_in = trial.suggest_int("num_burn_in_steps", 50, 300, step=50)
+    optimizer = sgld2.SGLD(params, lr=lr, num_burn_in_steps=burn_in, addnoise=True)
+    return optimizer
+
 def sgld2_optimizer(params, trial):
     # hyperparams search space
-    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
-    burn_in = trial.suggest_int("num_burn_in_steps", 10, 1000, step=30)
+    lr = trial.suggest_categorical("lr", [5e-5, 5e-4, 5e-3, 5e-2, .5])
+    burn_in = trial.suggest_int("num_burn_in_steps", 50, 300, step=50)
     optimizer = sgld2.SGLD(params, lr=lr, num_burn_in_steps=burn_in, addnoise=True)
     return optimizer
 
