@@ -51,10 +51,11 @@ class pSGLD(Optimizer):
                 elif lr_decay > 0:
                     lr = lr * (iteration ** -lr_decay)
 
-                if not state["history"]:
+                if not "history" in state:
                     state["history"] = d_p ** 2
 
                 rmsd = group["rmsprop_decay"]
+                eps = group["eps"]
                 state["history"] = rmsd * state["history"] + (1-rmsd) * (d_p ** 2)
                 precond = (torch.tensor(eps) + torch.sqrt(d_p))
 
