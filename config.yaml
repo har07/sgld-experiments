@@ -24,10 +24,10 @@ sgld2.SGLD:
   lr: 0.5
   num_burn_in_steps: 300
 sgld3.SGLD:
-  lr: .1 # .2
+  lr: .1
   train_size: 60000
   lr_decay: 2.e-2
-  weight_decay: 1.67e-5
+  weight_decay: 0.
   num_burn_in_steps: 300
 asgld.ASGLD:
   lr: 5.e-1
