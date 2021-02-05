@@ -8,6 +8,7 @@ import lib.model
 import lib.evaluation
 import lib.sgd as sgd
 import lib.sgld as sgld
+import lib.psgld as psgld
 import lib.sgld2 as sgld2
 import lib.sgld3 as sgld3
 import lib.ekfac_precond

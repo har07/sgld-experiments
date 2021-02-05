@@ -1,8 +1,8 @@
 seed: 1
-epoch: 100
-block_size: 20
+epoch: 20
+block_size: 10
 block_decay: .5
-optimizer: sgld3.SGLD
+optimizer: psgld.pSGLD
 optim.SGD:
   lr: 1.e-1
 optim.RMSprop:
@@ -29,6 +29,14 @@ sgld3.SGLD:
   lr_decay: 2.e-2
   weight_decay: 0.
   num_burn_in_steps: 300
+psgld.pSGLD:
+  lr: 1.e-3
+  train_size: 60000
+  lr_decay: 0.
+  weight_decay: 0.
+  num_burn_in_steps: 300
+  rmsprop_decay: .99
+  eps: 1.e-5
 asgld.ASGLD:
   lr: 5.e-1
   momentum: .9
