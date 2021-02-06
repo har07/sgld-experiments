@@ -80,10 +80,14 @@ writer = SummaryWriter()
 
 step = 0
 current_lr = optim_params["lr"]
-for epoch in range(epochs):
+
+# check if optimizer.step has 'lr' param
+step_args = inspect.getfullargspec(optimizer.step)
+lr_param = 'lr' in step_args.args
+
+for epoch in range(1, epochs+1):
     t0 = time.time()
-    if block_size > 0 and block_decay > 0 and ((epoch+1) % block_size) == 0:
-        current_lr = current_lr * block_decay
+
     print('current_lr: ', current_lr)
     model.train()
     for data, target in train_loader:
@@ -94,12 +98,8 @@ for epoch in range(epochs):
         output = model(data)
         loss = F.nll_loss(output, target)
         loss.backward()
-        if block_size > 0 and block_decay > 0:
-            step_args = inspect.getfullargspec(optimizer.step)
-            if 'lr' in step_args.args:
-                optimizer.step(lr=current_lr)
-            else:
-                optimizer = lr_setter.update_lr(optimizer, current_lr)
+        if block_size > 0 and block_decay > 0 and lr_param:
+            optimizer.step(lr=current_lr)
         else:
             optimizer.step()
 
@@ -108,6 +108,12 @@ for epoch in range(epochs):
 
     # measure training time
     elapsed = time.time() - t0
+
+    # update learning rate for next epoch
+    if block_size > 0 and block_decay > 0 and ((epoch) % block_size) == 0:
+        current_lr = current_lr * block_decay
+        if not lr_param:
+            optimizer = lr_setter.update_lr(optimizer, current_lr)
 
     # validate
     val_accuracy, _ = lib.evaluation.evaluate(model, test_loader)
