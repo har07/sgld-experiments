@@ -1,7 +1,7 @@
 seed: 1
-epoch: 20
-block_size: 10
-block_decay: .5
+epoch: 10
+block_size: 2
+block_decay: 0.5
 optimizer: psgld.pSGLD
 optim.SGD:
   lr: 1.e-1
@@ -30,6 +30,11 @@ sgld3.SGLD:
   weight_decay: 0.
   num_burn_in_steps: 300
 psgld.pSGLD:
+  lr: 1.e-2
+  diagonal_bias: 5.e-5
+  num_pseudo_batches: 1
+  precondition_decay_rate: .95
+psgld2.pSGLD:
   lr: 1.e-3
   train_size: 60000
   lr_decay: 0.

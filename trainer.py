@@ -9,17 +9,20 @@ import lib.evaluation
 import lib.sgd as sgd
 import lib.sgld as sgld
 import lib.psgld as psgld
+import lib.psgld2 as psgld2
 import lib.sgld2 as sgld2
 import lib.sgld3 as sgld3
 import lib.ekfac_precond
 import lib.kfac_precond
 import lib.asgld as asgld
+import lib.lr_setter as lr_setter
 import pysgmcmc.optimizers.sgld as pysgmcmc_sgld
 import argparse
 import numpy as np
 import time
 import yaml
 import datetime
+import inspect
 from torch.utils.tensorboard import SummaryWriter
 
 default_yaml =  "config.yaml"
@@ -92,7 +95,11 @@ for epoch in range(epochs):
         loss = F.nll_loss(output, target)
         loss.backward()
         if block_size > 0 and block_decay > 0:
-            optimizer.step(lr=current_lr)
+            step_args = inspect.getfullargspec(optimizer.step)
+            if 'lr' in step_args.args:
+                optimizer.step(lr=current_lr)
+            else:
+                optimizer = lr_setter.update_lr(optimizer, current_lr)
         else:
             optimizer.step()
 

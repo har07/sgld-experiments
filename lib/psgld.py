@@ -91,9 +91,11 @@ class pSGLD(Optimizer):
                 momentum = state["momentum"]
 
                 #  Momentum update {{{ #
-                momentum.add_(
-                    (1.0 - precondition_decay_rate) * ((gradient ** 2) - momentum)
-                )
+                # momentum.add_(
+                #     (1.0 - precondition_decay_rate) * ((gradient ** 2) - momentum)
+                # )
+                # tf style momentum calculation:
+                momentum = precondition_decay_rate * momentum + (1. - precondition_decay_rate) * (gradient ** 2)
                 #  }}} Momentum update #
 
                 if state["iteration"] > group["num_burn_in_steps"]:
@@ -101,9 +103,11 @@ class pSGLD(Optimizer):
                 else:
                     sigma = torch.zeros_like(parameter)
 
-                preconditioner = (
-                    1. / torch.sqrt(momentum + group["diagonal_bias"])
-                )
+                # preconditioner = (
+                #     1. / torch.sqrt(momentum + group["diagonal_bias"])
+                # )
+                # tf style preconditioner calculation:
+                preconditioner = torch.rsqrt(momentum + group["diagonal_bias"])
 
                 scaled_grad = (
                     0.5 * preconditioner * gradient * num_pseudo_batches +
