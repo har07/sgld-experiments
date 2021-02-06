@@ -1,71 +1,118 @@
 import torch
-from torch.distributions import Normal
-from torch.optim.optimizer import Optimizer, required
+from torch.optim import Optimizer
 
+# Borrowed from https://github.com/MFreidank/pysgmcmc/blob/pytorch/pysgmcmc/optimizers/sgld.py
+# Pytorch Port of a previous tensorflow implementation in `tensorflow_probability`:
+# https://github.com/tensorflow/probability/blob/master/tensorflow_probability/g3doc/api_docs/python/tfp/optimizer/StochasticGradientLangevinDynamics.md
 class pSGLD(Optimizer):
+    """ Stochastic Gradient Langevin Dynamics Sampler with preconditioning.
+        Optimization variable is viewed as a posterior sample under Stochastic
+        Gradient Langevin Dynamics with noise rescaled in eaach dimension
+        according to RMSProp.
     """
-    Translated from official implementation (matlab), with modification to support burn in steps
-    https://github.com/ChunyuanLI/pSGLD/blob/master/pSGLD_DNN/algorithms/SGLD_RMSprop.m
-    """
+    def __init__(self,
+                 params,
+                 lr=1e-2,
+                 precondition_decay_rate=0.95,
+                 num_pseudo_batches=1,
+                 num_burn_in_steps=3000,
+                 diagonal_bias=1e-8) -> None:
+        """ Set up a pSGLD Optimizer.
 
-    def __init__(self, params, lr=required, train_size=required, rmsprop_decay=.99, eps=1e-1, 
-                    weight_decay=0, lr_offset=0, lr_decay=0, num_burn_in_steps=300):
-        defaults = dict(lr=lr, train_size=train_size, rmsprop_decay=rmsprop_decay, eps=eps, weight_decay=weight_decay, 
-                        lr_offset=lr_offset, lr_decay=lr_decay, num_burn_in_steps=num_burn_in_steps)
-        super(pSGLD, self).__init__(params, defaults)
+        Parameters
+        ----------
+        params : iterable
+            Parameters serving as optimization variable.
+        lr : float, optional
+            Base learning rate for this optimizer.
+            Must be tuned to the specific function being minimized.
+            Default: `1e-2`.
+        precondition_decay_rate : float, optional
+            Exponential decay rate of the rescaling of the preconditioner (RMSprop).
+            Should be smaller than but nearly `1` to approximate sampling from the posterior.
+            Default: `0.95`
+        num_pseudo_batches : int, optional
+            Effective number of minibatches in the data set.
+            Trades off noise and prior with the SGD likelihood term.
+            Note: Assumes loss is taken as mean over a minibatch.
+            Otherwise, if the sum was taken, divide this number by the batch size.
+            Default: `1`.
+        num_burn_in_steps : int, optional
+            Number of iterations to collect gradient statistics to update the
+            preconditioner before starting to draw noisy samples.
+            Default: `3000`.
+        diagonal_bias : float, optional
+            Term added to the diagonal of the preconditioner to prevent it from
+            degenerating.
+            Default: `1e-8`.
 
-    def step(self, lr=None):
         """
-        Performs a single optimization step.
-        """
+        if lr < 0.0:
+            raise ValueError("Invalid learning rate: {}".format(lr))
+        if num_burn_in_steps < 0:
+            raise ValueError("Invalid num_burn_in_steps: {}".format(num_burn_in_steps))
+
+        defaults = dict(
+            lr=lr, precondition_decay_rate=precondition_decay_rate,
+            num_pseudo_batches=num_pseudo_batches,
+            num_burn_in_steps=num_burn_in_steps,
+            diagonal_bias=1e-8,
+        )
+        super().__init__(params, defaults)
+
+    def step(self, closure=None):
         loss = None
 
+        if closure is not None:
+            loss = closure()
+
         for group in self.param_groups:
-            if lr:
-                group['lr'] = lr
-            for p in group['params']:
-                if p.grad is None:
+            for parameter in group["params"]:
+
+                if parameter.grad is None:
                     continue
 
-                state = self.state[p]
+                state = self.state[parameter]
+                lr = group["lr"]
+                num_pseudo_batches = group["num_pseudo_batches"]
+                precondition_decay_rate = group["precondition_decay_rate"]
+                gradient = parameter.grad.data
+
+                #  State initialization {{{ #
+
                 if len(state) == 0:
                     state["iteration"] = 0
+                    state["momentum"] = torch.ones_like(parameter)
+
+                #  }}} State initialization #
+
                 state["iteration"] += 1
-                
-                iteration = state["iteration"]
-                d_p = p.grad.data
-                if iteration <= group["num_burn_in_steps"]:
-                    # SGD without noise
-                    p.data.add_(d_p, alpha=-group['lr'])
-                    return loss
 
-                # if passed burn in steps, do Langevin-like SGD with RMSProp preconditioner
-                weight_decay = group["weight_decay"]
-                if weight_decay > 0:
-                    d_p.add_(p, alpha=weight_decay)
+                momentum = state["momentum"]
 
-                lr_offset = group["lr_offset"]
-                lr_decay = group["lr_decay"]
-                if lr_offset > 0:
-                    lr * ((iteration+lr_offset) ** -lr_decay)
-                elif lr_decay > 0:
-                    lr = lr * (iteration ** -lr_decay)
-
-                if not "history" in state:
-                    state["history"] = d_p ** 2
-
-                rmsd = group["rmsprop_decay"]
-                eps = group["eps"]
-                state["history"] = rmsd * state["history"] + (1-rmsd) * (d_p ** 2)
-                precond = (torch.tensor(eps) + torch.sqrt(d_p))
-
-                size = d_p.size()
-                langevin_noise = Normal(
-                    torch.zeros(size),
-                    torch.ones(size)
+                #  Momentum update {{{ #
+                momentum.add_(
+                    (1.0 - precondition_decay_rate) * ((gradient ** 2) - momentum)
                 )
-                d_p = torch.tensor(lr)*d_p / precond + torch.sqrt(2*torch.tensor(lr)/precond) * \
-                        langevin_noise.sample().cuda()/group["train_size"]
-                p.data.add_(-d_p)
+                #  }}} Momentum update #
+
+                if state["iteration"] > group["num_burn_in_steps"]:
+                    sigma = 1. / torch.sqrt(torch.tensor(lr))
+                else:
+                    sigma = torch.zeros_like(parameter)
+
+                preconditioner = (
+                    1. / torch.sqrt(momentum + group["diagonal_bias"])
+                )
+
+                scaled_grad = (
+                    0.5 * preconditioner * gradient * num_pseudo_batches +
+                    torch.normal(
+                        mean=torch.zeros_like(gradient),
+                        std=torch.ones_like(gradient)
+                    ) * sigma * torch.sqrt(preconditioner)
+                )
+
+                parameter.data.add_(-lr * scaled_grad)
 
         return loss
