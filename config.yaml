@@ -36,9 +36,10 @@ psgld.pSGLD:
   precondition_decay_rate: .95
   num_burn_in_steps: 300
 psgld2.pSGLD:
-  lr: 1.e-3
+  lr: 5.e-3
   alpha: .99
   eps: 1.e-5
+  num_burn_in_steps: 600
   centered: False
   addnoise: True
 psgld3.pSGLD:

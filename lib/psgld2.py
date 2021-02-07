@@ -49,26 +49,25 @@ class pSGLD(Optimizer):
                 state['step'] += 1
                 
                 # sqavg x alpha + (1-alph) sqavg *(elemwise) sqavg
-                square_avg.mul_(alpha).addcmul_(1-alpha, d_p, d_p)
+                square_avg.mul_(alpha).addcmul_(d_p, d_p, value=1-alpha)
                 
                 if group['centered']:
                     grad_avg = state['grad_avg']
-                    grad_avg.mul_(alpha).add_(1-alpha, d_p)
+                    grad_avg.mul_(alpha).add_(d_p, alpha=1-alpha)
                     avg = square_avg.cmul(-1, grad_avg, grad_avg).sqrt().add_(group['eps'])
                 else:
                     avg = square_avg.sqrt().add_(group['eps'])
                     
                 
-                if group['addnoise'] and state["iteration"] > group["num_burn_in_steps"]:
+                if group['addnoise'] and state["step"] > group["num_burn_in_steps"]:
                     size = d_p.size()
                     langevin_noise = Normal(
                         torch.zeros(size).cuda(),
                         torch.ones(size).cuda().div_(group['lr']).div_(avg).sqrt()
                     )
-                    p.data.add_(-group['lr'],
-                                d_p.div_(avg) + langevin_noise.sample())
+                    p.data.add_(d_p.div_(avg) + langevin_noise.sample(), alpha=-group['lr'])
                 else:
                     #p.data.add_(-group['lr'], d_p.div_(avg))
-                    p.data.addcdiv_(-group['lr'], d_p, avg)
+                    p.data.addcdiv_( d_p, avg, value=-group['lr'])
 
         return loss

@@ -45,7 +45,7 @@ args = parser.parse_args()
 yaml_path = str(args.yaml)
 silent = bool(args.silent)
 
-with open('config.yaml') as f:
+with open(yaml_path) as f:
     config = yaml.load(f, Loader=yaml.Loader)
 
 seed = config['seed']
