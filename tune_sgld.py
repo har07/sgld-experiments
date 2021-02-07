@@ -9,6 +9,7 @@ import lib.model
 import lib.evaluation
 import lib.psgld as psgld
 import lib.psgld2 as psgld2
+import lib.psgld3 as psgld3
 import lib.sgld as sgld
 import lib.sgld2 as sgld2
 import lib.asgld as asgld
@@ -34,7 +35,7 @@ parser.add_argument("-e", "--epochs",
                     help="number of epoch to perform",
                     default=default_epochs)
 parser.add_argument("-o", "--optimizer",
-                    help="optimizer name: sgld, sgld2, sgld3, psgld, asgld")
+                    help="optimizer name: sgld, sgld2, sgld3, psgld, psgld2, psgld3, asgld")
 parser.add_argument("-b", "--batch",
                     help="tune batch size",
                     default=default_batch)
@@ -56,7 +57,7 @@ blocksize = int(args.blocksize)
 blockdecay = float(args.blockdecay)
 tune_batch_size = bool(args.batch)
 optimizer_name = str(args.optimizer)
-if not optimizer_name in ['sgld', 'sgld2', 'sgld3', 'psgld', 'psgld2', 'asgld']:
+if not optimizer_name in ['sgld', 'sgld2', 'sgld3', 'psgld', 'psgld2', 'psgld3', 'asgld']:
     raise ValueError('optimizer is not supported yet: ' + optimizer_name)
 
 def train(model, optimizer, train_loader, test_loader, epochs, lr):
@@ -105,6 +106,8 @@ def objective(trial):
         optimizer, lr = asgld_optimizer(model.parameters(), trial)
     elif optimizer_name == "psgld2":
         optimizer, lr = psgld2_optimizer(model.parameters(), trial)
+    elif optimizer_name == "psgld3":
+        optimizer, lr = psgld3_optimizer(model.parameters(), trial)
 
     accuracy = train(model, optimizer, train_loader, test_loader, epochs, lr)
     return accuracy
@@ -167,13 +170,21 @@ def asgld_optimizer(params, trial):
     optimizer = asgld.ASGLD(params, lr=lr, momentum=momentum, weight_decay=weight_decay, eps=eps, noise=noise)
     return optimizer, lr
 
-def psgld2_optimizer(params, trial):
+def psgld3_optimizer(params, trial):
     lr = trial.suggest_categorical("lr", [1e-3, 2e-3, 5e-3, 1e-2, .99])
     eps = trial.suggest_categorical("eps", [1e-8, 1e-5, 5e-5, 1e-3])
     burn_in = trial.suggest_categorical("num_burn_in_steps", [300, 600])
     rmsprop_decay = trial.suggest_categorical("rmsprop_decay", [.95, .99])
     train_size = trial.suggest_categorical("train_size", [60000, 30000, 10000])
-    optimizer = psgld2.pSGLD(params, lr=lr, train_size=train_size, rmsprop_decay=rmsprop_decay, eps=eps, num_burn_in_steps=burn_in)
+    optimizer = psgld3.pSGLD(params, lr=lr, train_size=train_size, rmsprop_decay=rmsprop_decay, eps=eps, num_burn_in_steps=burn_in)
+    return optimizer, lr
+
+def psgld2_optimizer(params, trial):
+    lr = trial.suggest_categorical("lr", [1e-3, 2e-3, 5e-3, 1e-2, .99])
+    alpha = trial.suggest_categorical("alpha", [.95, .99])
+    eps = trial.suggest_categorical("eps", [1e-8, 1e-5, 5e-5, 1e-3])
+    burn_in = trial.suggest_categorical("num_burn_in_steps", [300, 600])
+    optimizer = psgld2.pSGLD(params, lr=lr, alpha=alpha, eps=eps, num_burn_in_steps=burn_in)
     return optimizer, lr
 
 def main():

@@ -37,6 +37,12 @@ psgld.pSGLD:
   num_burn_in_steps: 300
 psgld2.pSGLD:
   lr: 1.e-3
+  alpha: .99
+  eps: 1.e-5
+  centered: False
+  addnoise: True
+psgld3.pSGLD:
+  lr: 1.e-3
   train_size: 60000
   lr_decay: 0.
   weight_decay: 0.

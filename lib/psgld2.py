@@ -1,20 +1,28 @@
 import torch
 from torch.distributions import Normal
 from torch.optim.optimizer import Optimizer, required
+import numpy as np
 
+# Borrowed from https://github.com/henripal/sgld/blob/master/sgld/sgld/sgld_optimizer.py
+# with modification to support burn in steps
 class pSGLD(Optimizer):
     """
-    Translated from official implementation (matlab), with modification to support burn in steps
-    https://github.com/ChunyuanLI/pSGLD/blob/master/pSGLD_DNN/algorithms/SGLD_RMSprop.m
+    Barely modified version of pytorch SGD to implement pSGLD
+    The RMSprop preconditioning code is mostly from pytorch rmsprop implementation.
     """
 
-    def __init__(self, params, lr=required, train_size=required, rmsprop_decay=.99, eps=1e-1, 
-                    weight_decay=0, lr_offset=0, lr_decay=0, num_burn_in_steps=300):
-        defaults = dict(lr=lr, train_size=train_size, rmsprop_decay=rmsprop_decay, eps=eps, weight_decay=weight_decay, 
-                        lr_offset=lr_offset, lr_decay=lr_decay, num_burn_in_steps=num_burn_in_steps)
+    def __init__(self, params, lr=required, alpha=0.99, eps=1e-8, centered=False, 
+                    addnoise=True, num_burn_in_steps=num_burn_in_steps):
+        defaults = dict(lr=lr, alpha=alpha, eps=eps, centered=centered, 
+                        addnoise=addnoise, num_burn_in_steps=num_burn_in_steps)
         super(pSGLD, self).__init__(params, defaults)
+        
+    def __setstate__(self, state):
+        super(pSGLD, self).__setstate__(state)
+        for group in self.param_groups:
+            group.setdefault('centered', False)
 
-    def step(self, lr=None):
+    def step(self, lr=None, add_noise = False):
         """
         Performs a single optimization step.
         """
@@ -26,46 +34,41 @@ class pSGLD(Optimizer):
             for p in group['params']:
                 if p.grad is None:
                     continue
-
-                state = self.state[p]
-                if len(state) == 0:
-                    state["iteration"] = 0
-                state["iteration"] += 1
-                
-                iteration = state["iteration"]
                 d_p = p.grad.data
-                if iteration <= group["num_burn_in_steps"]:
-                    # SGD without noise
-                    p.data.add_(d_p, alpha=-group['lr'])
-                    return loss
-
-                # if passed burn in steps, do Langevin-like SGD with RMSProp preconditioner
-                weight_decay = group["weight_decay"]
-                if weight_decay > 0:
-                    d_p.add_(p, alpha=weight_decay)
-
-                lr_offset = group["lr_offset"]
-                lr_decay = group["lr_decay"]
-                if lr_offset > 0:
-                    lr * ((iteration+lr_offset) ** -lr_decay)
-                elif lr_decay > 0:
-                    lr = lr * (iteration ** -lr_decay)
-
-                if not "history" in state:
-                    state["history"] = d_p ** 2
-
-                rmsd = group["rmsprop_decay"]
-                eps = group["eps"]
-                state["history"] = rmsd * state["history"] + (1-rmsd) * (d_p ** 2)
-                precond = (torch.tensor(eps) + torch.sqrt(d_p))
-
-                size = d_p.size()
-                langevin_noise = Normal(
-                    torch.zeros(size),
-                    torch.ones(size)
-                )
-                d_p = torch.tensor(lr)*d_p / precond + torch.sqrt(2*torch.tensor(lr)/precond) * \
-                        langevin_noise.sample().cuda()/group["train_size"]
-                p.data.add_(-d_p)
+                
+                state = self.state[p]
+                
+                if len(state) == 0:
+                    state['step'] = 0
+                    state['square_avg'] = torch.zeros_like(p.data)
+                    if group['centered']:
+                        state['grad_avg'] = torch.zeros_like(p.data)
+                        
+                square_avg = state['square_avg']
+                alpha = group['alpha']
+                state['step'] += 1
+                
+                # sqavg x alpha + (1-alph) sqavg *(elemwise) sqavg
+                square_avg.mul_(alpha).addcmul_(1-alpha, d_p, d_p)
+                
+                if group['centered']:
+                    grad_avg = state['grad_avg']
+                    grad_avg.mul_(alpha).add_(1-alpha, d_p)
+                    avg = square_avg.cmul(-1, grad_avg, grad_avg).sqrt().add_(group['eps'])
+                else:
+                    avg = square_avg.sqrt().add_(group['eps'])
+                    
+                
+                if group['addnoise'] and state["iteration"] > group["num_burn_in_steps"]:
+                    size = d_p.size()
+                    langevin_noise = Normal(
+                        torch.zeros(size).cuda(),
+                        torch.ones(size).cuda().div_(group['lr']).div_(avg).sqrt()
+                    )
+                    p.data.add_(-group['lr'],
+                                d_p.div_(avg) + langevin_noise.sample())
+                else:
+                    #p.data.add_(-group['lr'], d_p.div_(avg))
+                    p.data.addcdiv_(-group['lr'], d_p, avg)
 
         return loss

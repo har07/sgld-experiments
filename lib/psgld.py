@@ -99,7 +99,9 @@ class pSGLD(Optimizer):
                 #  }}} Momentum update #
 
                 if state["iteration"] > group["num_burn_in_steps"]:
-                    sigma = 1. / torch.sqrt(torch.tensor(lr))
+                    # sigma = 1. / torch.sqrt(torch.tensor(lr))
+                    # tf style:
+                    sigma = torch.rsqrt(torch.tensor(lr))
                 else:
                     sigma = torch.zeros_like(parameter)
 

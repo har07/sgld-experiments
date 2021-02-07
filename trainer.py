@@ -10,6 +10,7 @@ import lib.sgd as sgd
 import lib.sgld as sgld
 import lib.psgld as psgld
 import lib.psgld2 as psgld2
+import lib.psgld3 as psgld3
 import lib.sgld2 as sgld2
 import lib.sgld3 as sgld3
 import lib.ekfac_precond
