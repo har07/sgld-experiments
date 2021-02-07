@@ -4,16 +4,18 @@ from torch.optim.optimizer import Optimizer, required
 import numpy as np
 
 # Borrowed from https://github.com/henripal/sgld/blob/master/sgld/sgld/sgld_optimizer.py
-# with modification to support burn in steps
+# with modification to support burn in steps.
+# Noise calculation also modified, translated from Li Chunyuan's official implementation (matlab)
+# https://github.com/ChunyuanLI/pSGLD/blob/master/pSGLD_DNN/algorithms/SGLD_RMSprop.m
 class pSGLD(Optimizer):
     """
     Barely modified version of pytorch SGD to implement pSGLD
     The RMSprop preconditioning code is mostly from pytorch rmsprop implementation.
     """
 
-    def __init__(self, params, lr=required, alpha=0.99, eps=1e-8, centered=False, 
+    def __init__(self, params, lr=required, train_size=required, alpha=0.99, eps=1e-8, centered=False, 
                     addnoise=True, num_burn_in_steps=300):
-        defaults = dict(lr=lr, alpha=alpha, eps=eps, centered=centered, 
+        defaults = dict(lr=lr, train_size=train_size, alpha=alpha, eps=eps, centered=centered, 
                         addnoise=addnoise, num_burn_in_steps=num_burn_in_steps)
         super(pSGLD, self).__init__(params, defaults)
         
@@ -61,11 +63,18 @@ class pSGLD(Optimizer):
                 
                 if group['addnoise'] and state["step"] > group["num_burn_in_steps"]:
                     size = d_p.size()
+                    # langevin_noise = Normal(
+                    #     torch.zeros(size).cuda(),
+                    #     torch.ones(size).cuda().div_(group['lr']).div_(avg).sqrt()
+                    # )
+                    # p.data.add_(d_p.div_(avg) + langevin_noise.sample(), alpha=-group['lr'])
+                    # Li chunyuan's noise style:
                     langevin_noise = Normal(
                         torch.zeros(size).cuda(),
-                        torch.ones(size).cuda().div_(group['lr']).div_(avg).sqrt()
+                        torch.ones(size).cuda()
                     )
-                    p.data.add_(d_p.div_(avg) + langevin_noise.sample(), alpha=-group['lr'])
+                    noise_term = langevin_noise.sample().mul(avg.reciprocal().mul(2*lr)).div(group["train_size"])
+                    p.data.add_(d_p.div_(avg), alpha=-group['lr']).add_(noise_term)
                 else:
                     #p.data.add_(-group['lr'], d_p.div_(avg))
                     p.data.addcdiv_( d_p, avg, value=-group['lr'])

@@ -52,20 +52,25 @@ class pSGLD(Optimizer):
                     lr = lr * (iteration ** -lr_decay)
 
                 if not "history" in state:
-                    state["history"] = d_p ** 2
+                    # state["history"] = d_p.mul(d_p)
+                    state["history"] = torch.zeros_like(p.data)
 
                 rmsd = group["rmsprop_decay"]
                 eps = group["eps"]
-                state["history"] = rmsd * state["history"] + (1-rmsd) * (d_p ** 2)
-                precond = (torch.tensor(eps) + torch.sqrt(d_p))
+                # state["history"] = rmsd * state["history"] + (1-rmsd) * (d_p ** 2)
+                # precond = (torch.tensor(eps) + torch.sqrt(d_p))
+                state["history"] = state["history"].mul(rmsd).addcmul(d_p, d_p, value=1-rmsd)
+                precond = d_p.rsqrt().add(eps)
 
                 size = d_p.size()
                 langevin_noise = Normal(
                     torch.zeros(size),
                     torch.ones(size)
                 )
-                d_p = torch.tensor(lr)*d_p / precond + torch.sqrt(2*torch.tensor(lr)/precond) * \
-                        langevin_noise.sample().cuda()/group["train_size"]
-                p.data.add_(-d_p)
+                # d_p = torch.tensor(lr)*d_p / precond + torch.sqrt(2*torch.tensor(lr)/precond) * \
+                #         langevin_noise.sample().cuda()/group["train_size"]
+                noise_term = precond.mul(2*lr).sqrt().mul(langevin_noise.sample().cuda().div(group["train_size"]))
+                new_grad = d_p.mul(lr).mul(precond).add(noise_term)
+                p.data.add_(new_grad, alpha=-1)
 
         return loss
