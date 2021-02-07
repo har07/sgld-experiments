@@ -13,8 +13,10 @@ import lib.psgld3 as psgld3
 import lib.sgld as sgld
 import lib.sgld2 as sgld2
 import lib.asgld as asgld
+import lib.lr_setter as lr_setter
 import argparse
 import datetime
+import inspect
 
 import optuna
 
@@ -62,9 +64,12 @@ if not optimizer_name in ['sgld', 'sgld2', 'sgld3', 'psgld', 'psgld2', 'psgld3',
 
 def train(model, optimizer, train_loader, test_loader, epochs, lr):
     current_lr = lr
-    for _ in range(epochs):
-        if blocksize > 0 and blockdecay > 0 and ((epochs+1) % blocksize) == 0:
-            current_lr = current_lr * blockdecay
+    # check if optimizer.step has 'lr' param
+    step_args = inspect.getfullargspec(optimizer.step)
+    lr_param = 'lr' in step_args.args
+
+    for epoch in range(1, epochs+1):
+        print('epoch: ', epoch, ', current_lr: ', current_lr)
         model.train()
         for data, target in train_loader:
             data = data.cuda()
@@ -74,10 +79,16 @@ def train(model, optimizer, train_loader, test_loader, epochs, lr):
             loss = F.nll_loss(output, target)
             loss.backward()
 
-            if blocksize > 0 and blockdecay > 0:
+            if blocksize > 0 and blockdecay > 0 and lr_param:
                 optimizer.step(lr=current_lr)
             else:
                 optimizer.step()
+
+        # update learning rate
+        if blocksize > 0 and blockdecay > 0 and ((epoch) % blocksize) == 0:
+            current_lr = current_lr * blockdecay
+            if not lr_param:
+                optimizer = lr_setter.update_lr(optimizer, current_lr)
 
         # validate
         val_accuracy, _ = lib.evaluation.evaluate(model, test_loader)

@@ -12,7 +12,7 @@ class pSGLD(Optimizer):
     """
 
     def __init__(self, params, lr=required, alpha=0.99, eps=1e-8, centered=False, 
-                    addnoise=True, num_burn_in_steps=num_burn_in_steps):
+                    addnoise=True, num_burn_in_steps=300):
         defaults = dict(lr=lr, alpha=alpha, eps=eps, centered=centered, 
                         addnoise=addnoise, num_burn_in_steps=num_burn_in_steps)
         super(pSGLD, self).__init__(params, defaults)
