@@ -10,22 +10,19 @@ default_yaml = "plot_config.yaml"
 
 parser = argparse.ArgumentParser(
                     description="Plot history of training.")
-parser.add_argument("-t", "--tfevents",
-                    help="tfevents log file location")
 parser.add_argument("-y", "--yaml", default=default_yaml,
                     help="yaml config")
 parser.add_argument("-d", "--debug", default=False,
                     help="debug tfevents by showing all available tags")
 
 args = parser.parse_args()
-tfevents_path = str(args.tfevents)
 yaml_path = str(args.yaml)
 debug_events = bool(args.debug)
 
 with open(yaml_path) as f:
     config = yaml.load(f, Loader=yaml.Loader)
 
-def plot_tensorflow_log(path):
+def plot_tensorflow_log():
 
     # Loading too much data is slow...
     tf_size_guidance = {
@@ -34,13 +31,6 @@ def plot_tensorflow_log(path):
         'scalars': 100,
         'histograms': 1
     }
-
-    event_acc = EventAccumulator(path, tf_size_guidance)
-    event_acc.Reload()
-
-    # Show all tags in the log file
-    if debug_events:
-        print(event_acc.Tags())
 
     has_range = "xrange" in config
     if has_range:
@@ -51,6 +41,13 @@ def plot_tensorflow_log(path):
             data_range = range(cfg_range[0])
 
     for cfg in config["scalar_data"]:
+        event_acc = EventAccumulator(cfg["path"], tf_size_guidance)
+        event_acc.Reload()
+
+        # Show all tags in the log file
+        if debug_events:
+            print(event_acc.Tags())
+            
         events = event_acc.Scalars(cfg["tag"])
         steps = len(events)
         if not has_range:
@@ -80,7 +77,8 @@ def plot_tensorflow_log(path):
 
     plt.xlabel(config["xlabel"])
     plt.ylabel(config["ylabel"])
+    plt.ylim(bottom=94., top=99.5)
     plt.legend(loc=config["legend_loc"], frameon=True)
     plt.show()
 
-plot_tensorflow_log(tfevents_path)
+plot_tensorflow_log()
