@@ -69,7 +69,7 @@ def train(model, optimizer, train_loader, test_loader, epochs, lr):
     lr_param = 'lr' in step_args.args
 
     for epoch in range(1, epochs+1):
-        print('epoch: ', epoch, ', current_lr: ', current_lr)
+        # print('epoch: ', epoch, ', current_lr: ', current_lr)
         model.train()
         for data, target in train_loader:
             data = data.cuda()
@@ -145,7 +145,7 @@ def sgld3_optimizer(params, trial):
     # hyperparams search space
     lr = trial.suggest_categorical("lr", [5e-5, 5e-4, 5e-3, 5e-2, .5])
     burn_in = trial.suggest_int("num_burn_in_steps", 50, 300, step=50)
-    optimizer = sgld2.SGLD(params, lr=lr, num_burn_in_steps=burn_in, addnoise=True)
+    optimizer = sgld3.SGLD(params, lr=lr, num_burn_in_steps=burn_in, addnoise=True)
     return optimizer, lr
 
 def sgld2_optimizer(params, trial):
@@ -195,7 +195,8 @@ def psgld2_optimizer(params, trial):
     alpha = trial.suggest_categorical("alpha", [.95, .99])
     eps = trial.suggest_categorical("eps", [1e-8, 1e-5, 5e-5, 1e-3])
     burn_in = trial.suggest_categorical("num_burn_in_steps", [300, 600])
-    optimizer = psgld2.pSGLD(params, lr=lr, alpha=alpha, eps=eps, num_burn_in_steps=burn_in)
+    train_size = trial.suggest_categorical("train_size", [60000, 30000, 10000, 1])
+    optimizer = psgld2.pSGLD(params, lr=lr, train_size=train_size, alpha=alpha, eps=eps, num_burn_in_steps=burn_in)
     return optimizer, lr
 
 def main():
