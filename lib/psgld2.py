@@ -73,8 +73,8 @@ class pSGLD(Optimizer):
                         torch.zeros(size).cuda(),
                         torch.ones(size).cuda()
                     )
-                    noise_term = langevin_noise.sample().mul(avg.reciprocal().mul(2*lr)).div(group["train_size"])
-                    p.data.add_(d_p.div_(avg), alpha=-group['lr']).add_(noise_term)
+                    noise_term = langevin_noise.sample().mul(avg.reciprocal().mul(2*lr).sqrt()).div(group["train_size"])
+                    p.data.add_(d_p.div_(avg) + noise_term.div(group['lr']), alpha=-group['lr'])
                 else:
                     #p.data.add_(-group['lr'], d_p.div_(avg))
                     p.data.addcdiv_( d_p, avg, value=-group['lr'])

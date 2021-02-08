@@ -2,7 +2,7 @@ seed: 1
 epoch: 10
 block_size: 5
 block_decay: 0.5
-optimizer: asgld.ASGLD
+optimizer: psgld2.pSGLD
 optim.SGD:
   lr: 1.e-1
 optim.RMSprop:
@@ -39,7 +39,7 @@ psgld2.pSGLD:
   lr: 1.e-3
   train_size: 60000
   alpha: .95
-  eps: 1.e-5
+  eps: 5.e-5
   num_burn_in_steps: 300
   centered: False
   addnoise: True

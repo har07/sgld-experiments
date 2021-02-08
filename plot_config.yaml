@@ -6,10 +6,10 @@ scalar_data:
   - path: "/content/drive/MyDrive/Tesis/langevin/sgld3_20210204_001246/events.out.tfevents.1612397571.8bdd6e780295.690.0"
     tag: "Acc/train"
     plot_label: "SGLD Li"
-  - path: "/content/drive/MyDrive/Tesis/langevin/psgld2_20210208_041152/events.out.tfevents.1612757525.093728634cdb.190.0"
+  - path: "/content/drive/MyDrive/Tesis/langevin/psgld_20210208_074428/events.out.tfevents.1612774082.7816ab031c57.2569.0"
     tag: "Acc/train"
     plot_label: "pSGLD Li"
-    # best acc: 99.26, acc at epoch 10: 99.22
+    # best acc: 99.28, acc at epoch 10: 99.24
   - path: "/content/drive/MyDrive/Tesis/langevin/asgld_20210208_060145/events.out.tfevents.1612767296.7816ab031c57.1138.0"
     tag: "Acc/train"
     plot_label: "ASGLD"
