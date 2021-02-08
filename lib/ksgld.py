@@ -1,16 +1,16 @@
 import torch
 import torch.nn.functional as F
 
-from torch.optim.optimizer import Optimizer
+from torch.optim.optimizer import Optimizer, required
 
 
 # Borrowed from https://github.com/Thrandis/EKFAC-pytorch/blob/master/kfac.py
 # with modification to do actual parameter updates instead of just preconditioning gradient
 # and support burn in steps.
-class KFAC(Optimizer):
+class KSGLD(Optimizer):
 
-    def __init__(self, net, lr=required, eps, sua=False, pi=False, update_freq=1,
-                 alpha=1.0, constraint_norm=False, num_burn_in_steps=300):
+    def __init__(self, net, eps, lr=required, sua=False, pi=False, update_freq=1,
+                 alpha=1.0, constraint_norm=False, add_noise=True, num_burn_in_steps=300):
         """ K-FAC Optimizer for Linear and Conv2d layers.
 
         Computes the K-FAC of the second moment of the gradients.
@@ -34,6 +34,9 @@ class KFAC(Optimizer):
         self.update_freq = update_freq
         self.alpha = alpha
         self.constraint_norm = constraint_norm
+        self.num_burn_in_steps = num_burn_in_steps
+        self.add_noise = add_noise
+        self.lr = lr
         self.params = []
         self._fwd_handles = []
         self._bwd_handles = []
@@ -50,10 +53,11 @@ class KFAC(Optimizer):
                     params.append(mod.bias)
                 d = {'params': params, 'mod': mod, 'layer_type': mod_class}
                 self.params.append(d)
-        super(KFAC, self).__init__(self.params, {})
+        super(KSGLD, self).__init__(self.params, {})
 
-    def step(self, update_stats=True, update_params=True):
-        """Performs one step of preconditioning."""
+    def step(self, lr=None, update_stats=True, update_params=True):
+        """Performs one step of optimization."""
+        loss = None
         fisher_norm = 0.
         for group in self.param_groups:
             # Getting parameters
@@ -98,6 +102,27 @@ class KFAC(Optimizer):
                     param.grad.data *= scale
         if update_stats:
             self._iteration_counter += 1
+        
+        # update network parameters
+        if not lr:
+            lr = self.lr
+        for p in group['params']:
+            if p.grad is None:
+                continue
+            d_p = p.grad.data
+
+            state = self.state[p]
+
+            if not 'step' in state:
+                state['step'] = 0
+            state['step'] += 1
+            
+            if self.add_noise and state["step"] > self.num_burn_in_steps:
+                pass
+            else:
+                p.data.add_(d_p, alpha=-1.*lr)
+        
+        return loss
 
     def _save_input(self, mod, i):
         """Saves input of layer to compute covariance."""

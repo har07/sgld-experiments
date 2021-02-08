@@ -7,6 +7,7 @@ import torch.nn.functional as F
 import lib.dataset
 import lib.model
 import lib.evaluation
+import lib.ksgld as ksgld
 import lib.psgld as psgld
 import lib.psgld2 as psgld2
 import lib.psgld3 as psgld3
@@ -38,7 +39,8 @@ parser.add_argument("-e", "--epochs",
                     help="number of epoch to perform",
                     default=default_epochs)
 parser.add_argument("-o", "--optimizer",
-                    help="optimizer name: sgld, sgld2, sgld3, psgld, psgld2, psgld3, asgld")
+                    help="optimizer name: sgld, sgld2, sgld3, psgld, psgld2, psgld3, "+
+                         "asgld, ksgld")
 parser.add_argument("-b", "--batch",
                     help="tune batch size",
                     default=default_batch)
@@ -60,7 +62,7 @@ blocksize = int(args.blocksize)
 blockdecay = float(args.blockdecay)
 tune_batch_size = bool(args.batch)
 optimizer_name = str(args.optimizer)
-if not optimizer_name in ['sgld', 'sgld2', 'sgld3', 'psgld', 'psgld2', 'psgld3', 'asgld']:
+if not optimizer_name in ['sgld', 'sgld2', 'sgld3', 'psgld', 'psgld2', 'psgld3', 'asgld', 'ksgld']:
     raise ValueError('optimizer is not supported yet: ' + optimizer_name)
 
 def train(model, optimizer, train_loader, test_loader, epochs, lr):
@@ -122,6 +124,8 @@ def objective(trial):
         optimizer, lr = psgld3_optimizer(model.parameters(), trial)
     elif optimizer_name == "asgld":
         optimizer, lr = asgld_optimizer(model.parameters(), trial)
+    elif optimizer_name == "ksgld":
+        optimizer, lr = ksgld_optimizer(model, trial)
 
     accuracy = train(model, optimizer, train_loader, test_loader, epochs, lr)
     return accuracy
@@ -199,6 +203,12 @@ def psgld2_optimizer(params, trial):
     burn_in = trial.suggest_categorical("num_burn_in_steps", [300, 600])
     train_size = trial.suggest_categorical("train_size", [60000, 30000, 10000, 1])
     optimizer = psgld2.pSGLD(params, lr=lr, train_size=train_size, alpha=alpha, eps=eps, num_burn_in_steps=burn_in)
+    return optimizer, lr
+
+def ksgld_optimizer(model, trial):
+    lr = trial.suggest_categorical("lr", [1e-3, 1e-2, 1e-1, .9, .99])
+    eps = trial.suggest_categorical("eps", [1e-4, 1e-3, 1e-2, 1e-1])
+    optimizer = ksgld.KSGLD(model, eps=eps, lr=lr, add_noise=False)
     return optimizer, lr
 
 def main():

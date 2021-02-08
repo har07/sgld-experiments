@@ -1,8 +1,9 @@
 seed: 1
-epoch: 10
-block_size: 5
-block_decay: 0.5
-optimizer: psgld2.pSGLD
+epoch: 2
+block_size: 0
+block_decay: 00
+optimizer: ksgld.KSGLD
+accept_model: True
 optim.SGD:
   lr: 1.e-1
 optim.RMSprop:
@@ -58,6 +59,9 @@ asgld.ASGLD:
   eps: 5.e-5
   noise: 2.e-2
 ksgld.KSGLD:
+  lr: 0.1
+  num_burn_in_steps: 300
+  add_noise: True
   eps: 0.01   # Tikhonov regularization
   sua: False  # Applies SUA approximation.
   pi: False   # pi conrrection for Tikhonov regularization

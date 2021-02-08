@@ -16,6 +16,7 @@ import lib.sgld3 as sgld3
 import lib.ekfac_precond
 import lib.kfac_precond
 import lib.asgld as asgld
+import lib.ksgld as ksgld
 import lib.lr_setter as lr_setter
 import pysgmcmc.optimizers.sgld as pysgmcmc_sgld
 import argparse
@@ -75,7 +76,10 @@ if optimizer_name in config:
 
 print('optimizer: ', optimizer_name)
 print('optimizer params: ', optim_params)
-optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
+if config['accept_model']:
+    optimizer = eval(optimizer_name)(model, **optim_params)
+else:
+    optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
 
 writer = SummaryWriter()
 
@@ -106,6 +110,7 @@ for epoch in range(1, epochs+1):
 
         prediction = output.data.max(1)[1]   # first column has actual prob.
         accuracy = np.mean(prediction.eq(target.data).cpu().numpy())*100
+        print('step: ', step, ', accuracy: ', accuracy)
 
     # measure training time
     elapsed = time.time() - t0
