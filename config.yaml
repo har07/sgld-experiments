@@ -2,7 +2,7 @@ seed: 1
 epoch: 10
 block_size: 5
 block_decay: 0.5
-optimizer: psgld2.pSGLD
+optimizer: asgld.ASGLD
 optim.SGD:
   lr: 1.e-1
 optim.RMSprop:
@@ -52,11 +52,11 @@ psgld3.pSGLD:
   rmsprop_decay: .99
   eps: 1.e-5
 asgld.ASGLD:
-  lr: 5.e-1
+  lr: 2.e-1
   momentum: .9
   weight_decay: 5.e-4
-  eps: 1.e-6
-  noise: 0.1
+  eps: 5.e-5
+  noise: 2.e-2
 ksgld.KSGLD:
   eps: 0.01   # Tikhonov regularization
   sua: False  # Applies SUA approximation.
