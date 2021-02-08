@@ -12,6 +12,7 @@ import lib.psgld2 as psgld2
 import lib.psgld3 as psgld3
 import lib.sgld as sgld
 import lib.sgld2 as sgld2
+import lib.sgld3 as sgld3
 import lib.asgld as asgld
 import lib.lr_setter as lr_setter
 import argparse
@@ -119,6 +120,8 @@ def objective(trial):
         optimizer, lr = psgld2_optimizer(model.parameters(), trial)
     elif optimizer_name == "psgld3":
         optimizer, lr = psgld3_optimizer(model.parameters(), trial)
+    elif optimizer_name == "asgld":
+        optimizer, lr = asgld_optimizer(model.parameters(), trial)
 
     accuracy = train(model, optimizer, train_loader, test_loader, epochs, lr)
     return accuracy
@@ -145,7 +148,7 @@ def sgld3_optimizer(params, trial):
     # hyperparams search space
     lr = trial.suggest_categorical("lr", [5e-5, 5e-4, 5e-3, 5e-2, .5])
     burn_in = trial.suggest_int("num_burn_in_steps", 50, 300, step=50)
-    optimizer = sgld3.SGLD(params, lr=lr, num_burn_in_steps=burn_in, addnoise=True)
+    optimizer = sgld3.SGLD(params, lr=lr, num_burn_in_steps=burn_in)
     return optimizer, lr
 
 def sgld2_optimizer(params, trial):
@@ -173,12 +176,11 @@ def psgld_optimizer(params, trial):
     return optimizer, lr
 
 def asgld_optimizer(params, trial):
-    lr = trial.suggest_loguniform("lr", 1e-2, .99)
-    momentum = trial.suggest_uniform("momentum", .1, .99)
-    weight_decay = trial.suggest_loguniform("weight_decay", 5e-4, 1e-1)
-    eps = trial.suggest_loguniform("eps", 1e-6, 1e-1)
-    noise = trial.suggest_uniform("noise", 1e-2, .99)
-    optimizer = asgld.ASGLD(params, lr=lr, momentum=momentum, weight_decay=weight_decay, eps=eps, noise=noise)
+    lr = trial.suggest_categorical("lr", [1e-3, 2e-3, 1e-2, .1, .2, .99])
+    momentum = trial.suggest_categorical("momentum", [.1, .9, .99])
+    eps = trial.suggest_categorical("eps", [1e-8, 1e-5, 5e-5, 1e-3])
+    noise = trial.suggest_categorical("noise", [1e-2, 2e-2, 1e-1, .99])
+    optimizer = asgld.ASGLD(params, lr=lr, momentum=momentum, eps=eps, noise=noise)
     return optimizer, lr
 
 def psgld3_optimizer(params, trial):
