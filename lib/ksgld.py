@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 
+from torch.distributions import Normal
 from torch.optim.optimizer import Optimizer, required
 
 
@@ -59,6 +60,8 @@ class KSGLD(Optimizer):
         """Performs one step of optimization."""
         loss = None
         fisher_norm = 0.
+        if not lr:
+            lr = self.lr
         for group in self.param_groups:
             # Getting parameters
             if len(group['params']) == 2:
@@ -67,6 +70,9 @@ class KSGLD(Optimizer):
                 weight = group['params'][0]
                 bias = None
             state = self.state[weight]
+            if not 'step' in state:
+                state['step'] = 0
+            state['step'] += 1
             # Update convariances and inverses
             if update_stats:
                 if self._iteration_counter % self.update_freq == 0:
@@ -80,7 +86,15 @@ class KSGLD(Optimizer):
                         self._compute_covs(group, state)
             if update_params:
                 # Preconditionning
-                gw, gb, noise_term = self._precond(weight, bias, group, state, noise=self.add_noise)
+                gw, gb, noise_term, noise_bias = self._precond(weight, bias, group, state)
+                # if noise_term is not None and self.add_noise and state["step"] > self.num_burn_in_steps:
+                #     print("gw size: ", gw.size())
+                #     if gb is not None:
+                #         print("gb size: ", gb.size())
+                if noise_term is not None:
+                    gw.add_(noise_term.div(lr))
+                if noise_bias is not None:
+                    gb.add_(noise_bias.div(lr))
                 # Updating gradients
                 if self.constraint_norm:
                     fisher_norm += (weight.grad * gw).sum()
@@ -103,25 +117,13 @@ class KSGLD(Optimizer):
         if update_stats:
             self._iteration_counter += 1
         
-        # update network parameters
-        if not lr:
-            lr = self.lr
+        # update network parameters using simple SGD
         for p in group['params']:
             if p.grad is None:
                 continue
             d_p = p.grad.data
-
-            state = self.state[p]
-
-            if not 'step' in state:
-                state['step'] = 0
-            state['step'] += 1
             
-            if noise_term and self.add_noise and state["step"] > self.num_burn_in_steps:
-                # p.data.add_(d_p.div_(avg) + noise_term.div(group['lr']), alpha=-group['lr'])
-                p.data.add_(d_p + noise_term.div(lr), alpha=-1.*lr)
-            else:
-                p.data.add_(d_p, alpha=-1.*lr)
+            p.data.add_(d_p, alpha=-1.*lr)
         
         return loss
 
@@ -135,10 +137,12 @@ class KSGLD(Optimizer):
         if mod.training:
             self.state[mod]['gy'] = grad_output[0] * grad_output[0].size(0)
 
-    def _precond(self, weight, bias, group, state, noise=False):
+    def _precond(self, weight, bias, group, state):
         """Applies preconditioning."""
+        noise_term = None
+        noise_bias = None
         if group['layer_type'] == 'Conv2d' and self.sua:
-            return self._precond_sua(weight, bias, group, state, noise=noise)
+            return self._precond_sua(weight, bias, group, state)
         ixxt = state['ixxt']
         iggt = state['iggt']
         g = weight.grad.data
@@ -148,20 +152,43 @@ class KSGLD(Optimizer):
         if bias is not None:
             gb = bias.grad.data
             g = torch.cat([g, gb.view(gb.shape[0], 1)], dim=1)
+        noize_size = g.size()
         g = torch.mm(torch.mm(iggt, g), ixxt)
+        # add preconditioned noise terms
+        # this only implemented for Linear Layer. Conv2d layer with noise 
+        # implemented with SUA approximation only.
+        if self.add_noise and state["step"] > self.num_burn_in_steps:
+            langevin_noise = Normal(
+                        torch.zeros(noize_size).cuda(),
+                        torch.ones(noize_size).cuda()
+                    )
+            noise_term = langevin_noise.sample()
+            noise_term = torch.mm(torch.mm(iggt, noise_term), ixxt)
         if group['layer_type'] == 'Conv2d':
             g /= state['num_locations']
         if bias is not None:
             gb = g[:, -1].contiguous().view(*bias.shape)
             g = g[:, :-1]
+            if noise_term is not None:
+                noise_bias = noise_term[:, -1].view(*bias.shape)
+                noise_term = noise_term[:, :-1]
         else:
             gb = None
-        g = g.contiguous().view(*s)
-        return g, gb
 
-    def _precond_sua(self, weight, bias, group, state, noise=False):
+        g = g.contiguous().view(*s)
+        if noise_term is not None:
+            noise_term = noise_term.view(*s)
+
+        # if noise_term is not None:
+        #     print('noise_term variance: ', torch.var(noise_term))
+        #     print('noise_term std: ', torch.std(noise_term))
+        #     print("noise size: ", noise_term.size())
+        return g, gb, noise_term, noise_bias
+
+    def _precond_sua(self, weight, bias, group, state):
         """Preconditioning for KFAC SUA."""
         noise_term = None
+        noise_bias = None
         ixxt = state['ixxt']
         iggt = state['iggt']
         g = weight.grad.data
@@ -172,17 +199,18 @@ class KSGLD(Optimizer):
         if bias is not None:
             gb = bias.grad.view(1, -1, 1, 1).expand(1, -1, s[2], s[3])
             g = torch.cat([g, gb], dim=0)
+        noise_size = g.size()
         # precondition `g` with `ixxt` and `iggt`
         # `iggt` * `ixxt` * `g`
         g = torch.mm(ixxt, g.contiguous().view(-1, s[0]*s[2]*s[3]))
         g = g.view(-1, s[0], s[2], s[3]).permute(1, 0, 2, 3).contiguous()
         g = torch.mm(iggt, g.view(s[0], -1)).view(s[0], -1, s[2], s[3])
         g /= state['num_locations']
-        if noise:
-            size = g.size()
+        # add preconditioned noise terms
+        if self.add_noise and state["step"] > self.num_burn_in_steps:
             langevin_noise = Normal(
-                        torch.zeros(size).cuda(),
-                        torch.ones(size).cuda()
+                        torch.zeros(noise_size).cuda(),
+                        torch.ones(noise_size).cuda()
                     )
             # noise_term = langevin_noise.sample().mul(avg.reciprocal().mul(2*lr).sqrt())
             noise_term = langevin_noise.sample()
@@ -194,9 +222,17 @@ class KSGLD(Optimizer):
         if bias is not None:
             gb = g[:, -1, s[2]//2, s[3]//2]
             g = g[:, :-1]
+            if noise_term is not None:
+                noise_bias = noise_term[:, -1, s[2]//2, s[3]//2]
+                noise_term = noise_term[:, :-1]
         else:
             gb = None
-        return g, gb, noise_term
+
+        # if noise_term is not None:
+        #     print('noise_term variance (SUA): ', torch.var(noise_term))
+        #     print('noise_term std (SUA): ', torch.std(noise_term))
+        #     print("noise size: ", noise_term.size())
+        return g, gb, noise_term, noise_bias
 
     def _compute_covs(self, group, state):
         """Computes the covariances."""

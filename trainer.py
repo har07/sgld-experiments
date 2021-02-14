@@ -110,7 +110,7 @@ for epoch in range(1, epochs+1):
 
         prediction = output.data.max(1)[1]   # first column has actual prob.
         accuracy = np.mean(prediction.eq(target.data).cpu().numpy())*100
-        print('step: ', step, ', accuracy: ', accuracy)
+        # print('step: ', step, ', accuracy: ', accuracy)
 
     # measure training time
     elapsed = time.time() - t0

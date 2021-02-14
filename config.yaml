@@ -59,13 +59,13 @@ asgld.ASGLD:
   eps: 5.e-5
   noise: 2.e-2
 ksgld.KSGLD:
-  lr: 0.1
+  lr: 0.99
   num_burn_in_steps: 300
   add_noise: True
-  eps: 0.01   # Tikhonov regularization
-  sua: False  # Applies SUA approximation.
-  pi: False   # pi conrrection for Tikhonov regularization
-  update_freq: 10
+  eps: 0.001   # Tikhonov regularization
+  sua: True  # Applies SUA approximation.
+  pi: True   # pi conrrection for Tikhonov regularization
+  update_freq: 50
   alpha: 1.   # Running average parameter (if == 1, no r. ave.).
   constraint_norm: False  # Scale the gradients by the squared fisher norm.
 eksgld.EKSGLD:
@@ -75,5 +75,5 @@ eksgld.EKSGLD:
   update_freq: 10
   alpha: 1. # Running average parameter (if == 1, no r. ave.).
 dataset:
-  train_batch: 100
-  test_batch: 100
+  train_batch: 200
+  test_batch: 200
