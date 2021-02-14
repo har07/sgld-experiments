@@ -80,7 +80,7 @@ class KSGLD(Optimizer):
                         self._compute_covs(group, state)
             if update_params:
                 # Preconditionning
-                gw, gb = self._precond(weight, bias, group, state)
+                gw, gb, noise_term = self._precond(weight, bias, group, state, noise=self.add_noise)
                 # Updating gradients
                 if self.constraint_norm:
                     fisher_norm += (weight.grad * gw).sum()
@@ -117,8 +117,9 @@ class KSGLD(Optimizer):
                 state['step'] = 0
             state['step'] += 1
             
-            if self.add_noise and state["step"] > self.num_burn_in_steps:
-                pass
+            if noise_term and self.add_noise and state["step"] > self.num_burn_in_steps:
+                # p.data.add_(d_p.div_(avg) + noise_term.div(group['lr']), alpha=-group['lr'])
+                p.data.add_(d_p + noise_term.div(lr), alpha=-1.*lr)
             else:
                 p.data.add_(d_p, alpha=-1.*lr)
         
@@ -134,10 +135,10 @@ class KSGLD(Optimizer):
         if mod.training:
             self.state[mod]['gy'] = grad_output[0] * grad_output[0].size(0)
 
-    def _precond(self, weight, bias, group, state):
+    def _precond(self, weight, bias, group, state, noise=False):
         """Applies preconditioning."""
         if group['layer_type'] == 'Conv2d' and self.sua:
-            return self._precond_sua(weight, bias, group, state)
+            return self._precond_sua(weight, bias, group, state, noise=noise)
         ixxt = state['ixxt']
         iggt = state['iggt']
         g = weight.grad.data
@@ -158,27 +159,44 @@ class KSGLD(Optimizer):
         g = g.contiguous().view(*s)
         return g, gb
 
-    def _precond_sua(self, weight, bias, group, state):
+    def _precond_sua(self, weight, bias, group, state, noise=False):
         """Preconditioning for KFAC SUA."""
+        noise_term = None
         ixxt = state['ixxt']
         iggt = state['iggt']
         g = weight.grad.data
         s = g.shape
         mod = group['mod']
         g = g.permute(1, 0, 2, 3).contiguous()
+        # if bias not None, merge grad of weight and grad of bias into `g`
         if bias is not None:
             gb = bias.grad.view(1, -1, 1, 1).expand(1, -1, s[2], s[3])
             g = torch.cat([g, gb], dim=0)
+        # precondition `g` with `ixxt` and `iggt`
+        # `iggt` * `ixxt` * `g`
         g = torch.mm(ixxt, g.contiguous().view(-1, s[0]*s[2]*s[3]))
         g = g.view(-1, s[0], s[2], s[3]).permute(1, 0, 2, 3).contiguous()
         g = torch.mm(iggt, g.view(s[0], -1)).view(s[0], -1, s[2], s[3])
         g /= state['num_locations']
+        if noise:
+            size = g.size()
+            langevin_noise = Normal(
+                        torch.zeros(size).cuda(),
+                        torch.ones(size).cuda()
+                    )
+            # noise_term = langevin_noise.sample().mul(avg.reciprocal().mul(2*lr).sqrt())
+            noise_term = langevin_noise.sample()
+            noise_term = torch.mm(ixxt, noise_term.contiguous().view(-1, s[0]*s[2]*s[3]))
+            noise_term = noise_term.view(-1, s[0], s[2], s[3]).permute(1, 0, 2, 3).contiguous()
+            noise_term = torch.mm(iggt, noise_term.view(s[0], -1)).view(s[0], -1, s[2], s[3])
+            noise_term /= state['num_locations']
+        # if bias not None, split back grad of weight and grad of bias from `g`
         if bias is not None:
             gb = g[:, -1, s[2]//2, s[3]//2]
             g = g[:, :-1]
         else:
             gb = None
-        return g, gb
+        return g, gb, noise_term
 
     def _compute_covs(self, group, state):
         """Computes the covariances."""

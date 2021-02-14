@@ -206,9 +206,12 @@ def psgld2_optimizer(params, trial):
     return optimizer, lr
 
 def ksgld_optimizer(model, trial):
-    lr = trial.suggest_categorical("lr", [1e-3, 1e-2, 1e-1, .9, .99])
+    lr = trial.suggest_categorical("lr", [1e-2, 1e-1, .9, .99, .999])
     eps = trial.suggest_categorical("eps", [1e-4, 1e-3, 1e-2, 1e-1])
-    optimizer = ksgld.KSGLD(model, eps=eps, lr=lr, add_noise=False)
+    alpha = trial.suggest_categorical("alpha", [1e-6, 1e-5, 1e-4, 1e-3, 1.])
+    sua = trial.suggest_categorical("sua", [True, False])
+    pi = trial.suggest_categorical("pi", [True, False])
+    optimizer = ksgld.KSGLD(model, eps=eps, lr=lr, sua=sua, pi=pi, alpha=alpha, update_freq=2, add_noise=False)
     return optimizer, lr
 
 def main():
