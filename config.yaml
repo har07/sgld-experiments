@@ -2,7 +2,15 @@ seed: 1
 epoch: 2
 block_size: 0
 block_decay: 00
-optimizer: ksgld.KSGLD
+preconditioner: kfac.KFAC
+kfac.KFAC:
+  eps: 0.001   # Tikhonov regularization
+  sua: True  # Applies SUA approximation.
+  pi: True   # pi conrrection for Tikhonov regularization
+  update_freq: 50
+  alpha: 1.   # Running average parameter (if == 1, no r. ave.).
+  constraint_norm: False  # Scale the gradients by the squared fisher norm.
+optimizer: optim.SGD
 accept_model: True
 optim.SGD:
   lr: 1.e-1
@@ -61,7 +69,7 @@ asgld.ASGLD:
 ksgld.KSGLD:
   lr: 0.99
   num_burn_in_steps: 300
-  add_noise: True
+  add_noise: False
   eps: 0.001   # Tikhonov regularization
   sua: True  # Applies SUA approximation.
   pi: True   # pi conrrection for Tikhonov regularization

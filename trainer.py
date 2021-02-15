@@ -13,8 +13,8 @@ import lib.psgld2 as psgld2
 import lib.psgld3 as psgld3
 import lib.sgld2 as sgld2
 import lib.sgld3 as sgld3
-import lib.ekfac_precond
-import lib.kfac_precond
+import lib.ekfac_precond as ekfac
+import lib.kfac_precond as kfac
 import lib.asgld as asgld
 import lib.ksgld as ksgld
 import lib.lr_setter as lr_setter
@@ -54,6 +54,7 @@ epochs = config['epoch']
 block_size = config['block_size']
 block_decay = config['block_decay']
 optimizer_name = config['optimizer']
+precond_name = config['preconditioner']
 
 dataset_params = config['dataset']
 train_batch = dataset_params['train_batch']
@@ -71,7 +72,7 @@ if optimizer_name in config:
     optim_params2 = config[optimizer_name]
     for k in optim_params2:
         v = optim_params2[k]
-        if v:
+        if v or v == False:
             optim_params[k] = v
 
 print('optimizer: ', optimizer_name)
@@ -80,6 +81,17 @@ if config['accept_model']:
     optimizer = eval(optimizer_name)(model, **optim_params)
 else:
     optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
+
+precond_params = {}
+precond = None
+if precond_name in config:
+    precond_params2 = config[precond_name]
+    for k in precond_params2:
+        v = precond_params2[k]
+        if v or v == False:
+            precond_params[k] = v
+if precond_name != '' and precond_name.lower() != 'none':
+    precond = eval(precond_name)(model, **precond_params)
 
 writer = SummaryWriter()
 
@@ -103,6 +115,8 @@ for epoch in range(1, epochs+1):
         output = model(data)
         loss = F.nll_loss(output, target)
         loss.backward()
+        if precond:
+            precond.step()
         if block_size > 0 and block_decay > 0 and lr_param:
             optimizer.step(lr=current_lr)
         else:
