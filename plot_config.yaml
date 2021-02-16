@@ -3,21 +3,25 @@ ylabel: accuracy
 xlabel: epoch
 xrange: [0,10]
 scalar_data:
-  - path: "/content/drive/MyDrive/Tesis/langevin/sgld3_20210204_001246/events.out.tfevents.1612397571.8bdd6e780295.690.0"
+  - path: "/content/drive/MyDrive/Tesis/langevin/ksgld_20210216_100915/events.out.tfevents.1613470159.05aaef52a288.8540.0"
     tag: "Acc/train"
-    plot_label: "SGLD Li"
+    plot_label: "KSGLD"
+    # best acc: 99.33, acc at epoch 10: 99.32
+  - path: "/content/drive/MyDrive/Tesis/langevin/kfac_20210216_024133/events.out.tfevents.1613443297.05aaef52a288.1738.0"
+    tag: "Acc/train"
+    plot_label: "K-FAC"
+    # best acc: 99.31, acc at epoch 10: 99.31
   - path: "/content/drive/MyDrive/Tesis/langevin/psgld_20210208_074428/events.out.tfevents.1612774082.7816ab031c57.2569.0"
     tag: "Acc/train"
-    plot_label: "pSGLD Li"
+    plot_label: "pSGLD"
     # best acc: 99.28, acc at epoch 10: 99.24
   - path: "/content/drive/MyDrive/Tesis/langevin/asgld_20210208_060145/events.out.tfevents.1612767296.7816ab031c57.1138.0"
     tag: "Acc/train"
     plot_label: "ASGLD"
     # best acc: 99.24, acc at epoch 10: 99.24
-  - path: "/content/drive/MyDrive/Tesis/langevin/kfac_20210216_024133/events.out.tfevents.1613443297.05aaef52a288.1738.0"
+  - path: "/content/drive/MyDrive/Tesis/langevin/sgld3_20210204_001246/events.out.tfevents.1612397571.8bdd6e780295.690.0"
     tag: "Acc/train"
-    plot_label: "K-FAC"
-    # best acc: 99.31, acc at epoch 10: 99.31
+    plot_label: "SGLD"
 manual_data:
   - data: [94.669,96.802,97.578,98.043,98.362,98.547,98.661,98.737,98.828,98.893]
     plot_label: "RMSprop"

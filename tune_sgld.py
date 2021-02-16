@@ -101,7 +101,8 @@ def objective(trial):
     seed = 1
     batch_size = 100
     if tune_batch_size:
-        batch_size = trial.suggest_int("batch_size", 50, 1000, step=50)
+        # batch_size = trial.suggest_int("batch_size", 50, 1000, step=50)
+        batch_size = trial.suggest_categorical("batch_size", [200, 500])
 
     torch.cuda.set_device(0)
     torch.manual_seed(seed)
@@ -206,12 +207,15 @@ def psgld2_optimizer(params, trial):
     return optimizer, lr
 
 def ksgld_optimizer(model, trial):
-    lr = trial.suggest_categorical("lr", [1e-2, 1e-1, .9, .99, .999])
-    eps = trial.suggest_categorical("eps", [1e-4, 1e-3, 1e-2, 1e-1])
-    alpha = trial.suggest_categorical("alpha", [1e-6, 1e-5, 1e-4, 1e-3, 1.])
-    sua = trial.suggest_categorical("sua", [True, False])
-    pi = trial.suggest_categorical("pi", [True, False])
-    optimizer = ksgld.KSGLD(model, eps=eps, lr=lr, sua=sua, pi=pi, alpha=alpha, update_freq=2, add_noise=False)
+    lr = trial.suggest_float("lr", 1.e-3, 3.e-3, step=5.e-4)
+    num_burn_in_steps = trial.suggest_categorical("num_burn_in_steps", [300, 600])
+    # eps = trial.suggest_categorical("eps", [1e-3])
+    # alpha = trial.suggest_categorical("alpha", [1.])
+    # sua = trial.suggest_categorical("sua", [True])
+    # pi = trial.suggest_categorical("pi", [False])
+    # optimizer = ksgld.KSGLD(model, eps=eps, lr=lr, sua=sua, pi=pi, alpha=alpha, update_freq=50, add_noise=True)
+    optimizer = ksgld.KSGLD(model, eps=1.e-3, lr=lr, sua=True, pi=False, alpha=1., update_freq=50, 
+                            num_burn_in_steps=num_burn_in_steps, add_noise=True)
     return optimizer, lr
 
 def main():
