@@ -14,6 +14,10 @@ scalar_data:
     tag: "Acc/train"
     plot_label: "ASGLD"
     # best acc: 99.24, acc at epoch 10: 99.24
+  - path: "/content/drive/MyDrive/Tesis/langevin/kfac_20210216_013936/events.out.tfevents.1613439580.05aaef52a288.658.0"
+    tag: "Acc/train"
+    plot_label: "K-FAC"
+    # best acc: 99.29, acc at epoch 10: 99.29
 manual_data:
   - data: [94.669,96.802,97.578,98.043,98.362,98.547,98.661,98.737,98.828,98.893]
     plot_label: "RMSprop"

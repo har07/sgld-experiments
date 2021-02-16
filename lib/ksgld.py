@@ -37,7 +37,6 @@ class KSGLD(Optimizer):
         self.constraint_norm = constraint_norm
         self.num_burn_in_steps = num_burn_in_steps
         self.add_noise = add_noise
-        self.lr = lr
         self.params = []
         self._fwd_handles = []
         self._bwd_handles = []
@@ -54,15 +53,20 @@ class KSGLD(Optimizer):
                     params.append(mod.bias)
                 d = {'params': params, 'mod': mod, 'layer_type': mod_class}
                 self.params.append(d)
-        super(KSGLD, self).__init__(self.params, {})
+        
+        defaults = dict(lr=lr)
+        super(KSGLD, self).__init__(self.params, defaults)
 
+    @torch.no_grad()
     def step(self, lr=None, update_stats=True, update_params=True):
         """Performs one step of optimization."""
         loss = None
         fisher_norm = 0.
-        if not lr:
-            lr = self.lr
         for group in self.param_groups:
+            if lr:
+                group['lr'] = lr
+            else:
+                lr = group['lr']
             # Getting parameters
             if len(group['params']) == 2:
                 weight, bias = group['params']
@@ -98,11 +102,11 @@ class KSGLD(Optimizer):
                 # Updating gradients
                 if self.constraint_norm:
                     fisher_norm += (weight.grad * gw).sum()
-                weight.grad.data = gw
+                weight.grad = gw
                 if bias is not None:
                     if self.constraint_norm:
                         fisher_norm += (bias.grad * gb).sum()
-                    bias.grad.data = gb
+                    bias.grad = gb
             # Cleaning
             if 'x' in self.state[group['mod']]:
                 del self.state[group['mod']]['x']
@@ -113,17 +117,20 @@ class KSGLD(Optimizer):
             scale = (1. / fisher_norm) ** 0.5
             for group in self.param_groups:
                 for param in group['params']:
-                    param.grad.data *= scale
+                    param.grad *= scale
         if update_stats:
             self._iteration_counter += 1
         
         # update network parameters using simple SGD
-        for p in group['params']:
-            if p.grad is None:
-                continue
-            d_p = p.grad.data
-            
-            p.data.add_(d_p, alpha=-1.*lr)
+        for group in self.param_groups:
+            if lr:
+                group['lr'] = lr
+            for p in group['params']:
+                if p.grad is None:
+                    continue
+                d_p = p.grad
+                
+                p.add_(d_p, alpha=-group['lr'])
         
         return loss
 
@@ -145,12 +152,12 @@ class KSGLD(Optimizer):
             return self._precond_sua(weight, bias, group, state)
         ixxt = state['ixxt']
         iggt = state['iggt']
-        g = weight.grad.data
+        g = weight.grad
         s = g.shape
         if group['layer_type'] == 'Conv2d':
             g = g.contiguous().view(s[0], s[1]*s[2]*s[3])
         if bias is not None:
-            gb = bias.grad.data
+            gb = bias.grad
             g = torch.cat([g, gb.view(gb.shape[0], 1)], dim=1)
         noize_size = g.size()
         g = torch.mm(torch.mm(iggt, g), ixxt)
@@ -191,7 +198,7 @@ class KSGLD(Optimizer):
         noise_bias = None
         ixxt = state['ixxt']
         iggt = state['iggt']
-        g = weight.grad.data
+        g = weight.grad
         s = g.shape
         mod = group['mod']
         g = g.permute(1, 0, 2, 3).contiguous()
@@ -246,9 +253,9 @@ class KSGLD(Optimizer):
                              stride=mod.stride)
             else:
                 x = x.view(x.shape[0], x.shape[1], -1)
-            x = x.data.permute(1, 0, 2).contiguous().view(x.shape[1], -1)
+            x = x.permute(1, 0, 2).contiguous().view(x.shape[1], -1)
         else:
-            x = x.data.t()
+            x = x.t()
         if mod.bias is not None:
             ones = torch.ones_like(x[:1])
             x = torch.cat([x, ones], dim=0)
@@ -260,11 +267,11 @@ class KSGLD(Optimizer):
                                 alpha=self.alpha / float(x.shape[1]))
         # Computation of ggt
         if group['layer_type'] == 'Conv2d':
-            gy = gy.data.permute(1, 0, 2, 3)
+            gy = gy.permute(1, 0, 2, 3)
             state['num_locations'] = gy.shape[2] * gy.shape[3]
             gy = gy.contiguous().view(gy.shape[0], -1)
         else:
-            gy = gy.data.t()
+            gy = gy.t()
             state['num_locations'] = 1
         if self._iteration_counter == 0:
             state['ggt'] = torch.mm(gy, gy.t()) / float(gy.shape[1])

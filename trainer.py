@@ -92,6 +92,8 @@ if precond_name in config:
             precond_params[k] = v
 if precond_name != '' and precond_name.lower() != 'none':
     precond = eval(precond_name)(model, **precond_params)
+    print('preconditioner: ', precond_name)
+    print('preconditioner params: ', precond_params)
 
 writer = SummaryWriter()
 
