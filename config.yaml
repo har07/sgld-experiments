@@ -1,7 +1,7 @@
 seed: 1
-epoch: 10
-block_size: 5
-block_decay: .5
+epoch: 2
+block_size: 0
+block_decay: .0
 preconditioner: None
 optimizer: eksgld.EKSGLD
 accept_model: True
@@ -11,7 +11,7 @@ eksgld.EKSGLD:
   add_noise: False
   eps: 1.e-3   # Tikhonov regularization
   sua: True  # Applies SUA approximation.
-  ra: False
+  ra: True
   update_freq: 50
   alpha: .75   # Running average parameter (if == 1, no r. ave.).
 ksgld.KSGLD:
@@ -85,12 +85,6 @@ asgld.ASGLD:
   weight_decay: 5.e-4
   eps: 5.e-5
   noise: 2.e-2
-eksgld.EKSGLD:
-  eps: 0.01 # Tikhonov regularization
-  sua: False
-  ra: False # Computes stats using a running average of averaged gradients instead of using a intra minibatch estimate
-  update_freq: 10
-  alpha: 1. # Running average parameter (if == 1, no r. ave.).
 dataset:
   train_batch: 200
   test_batch: 200
