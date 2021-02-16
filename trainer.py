@@ -17,6 +17,7 @@ import lib.ekfac_precond as ekfac
 import lib.kfac_precond as kfac
 import lib.asgld as asgld
 import lib.ksgld as ksgld
+import lib.eksgld as eksgld
 import lib.lr_setter as lr_setter
 import pysgmcmc.optimizers.sgld as pysgmcmc_sgld
 import argparse

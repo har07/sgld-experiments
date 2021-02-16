@@ -3,8 +3,17 @@ epoch: 10
 block_size: 5
 block_decay: .5
 preconditioner: None
-optimizer: ksgld.KSGLD
+optimizer: eksgld.EKSGLD
 accept_model: True
+eksgld.EKSGLD:
+  lr: 1.5e-3
+  num_burn_in_steps: 600
+  add_noise: False
+  eps: 1.e-3   # Tikhonov regularization
+  sua: True  # Applies SUA approximation.
+  ra: False
+  update_freq: 50
+  alpha: .75   # Running average parameter (if == 1, no r. ave.).
 ksgld.KSGLD:
   lr: 1.5e-3
   num_burn_in_steps: 600
