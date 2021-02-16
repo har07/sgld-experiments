@@ -68,6 +68,8 @@ class KSGLD(Optimizer):
             else:
                 lr = group['lr']
             # Getting parameters
+            if len(group['params']) > 2:
+                print("len(group['params']) is more than 2!!!: ", len(group['params']))
             if len(group['params']) == 2:
                 weight, bias = group['params']
             else:
@@ -91,14 +93,12 @@ class KSGLD(Optimizer):
             if update_params:
                 # Preconditionning
                 gw, gb, noise_term, noise_bias = self._precond(weight, bias, group, state)
-                # if noise_term is not None and self.add_noise and state["step"] > self.num_burn_in_steps:
-                #     print("gw size: ", gw.size())
-                #     if gb is not None:
-                #         print("gb size: ", gb.size())
                 if noise_term is not None:
-                    gw.add_(noise_term.div(lr))
-                if noise_bias is not None:
-                    gb.add_(noise_bias.div(lr))
+                    state['noise_term'] = noise_term
+                    # print('noise_term variance: ', torch.var(noise_term))
+                    # print('noise_term std: ', torch.std(noise_term))
+                if noise_bias is not None and bias is not None:
+                    state['noise_bias'] = noise_bias
                 # Updating gradients
                 if self.constraint_norm:
                     fisher_norm += (weight.grad * gw).sum()
@@ -122,15 +122,49 @@ class KSGLD(Optimizer):
             self._iteration_counter += 1
         
         # update network parameters using simple SGD
+        # TODO: update network params in the same
+        # `for group in self.param_groups:`-loop as updating gradient
+        # because noise_term and noise_bias information only available there.
+        # Or maybe store noise in group variable?
         for group in self.param_groups:
             if lr:
                 group['lr'] = lr
-            for p in group['params']:
+            # Getting parameters
+            if len(group['params']) == 2:
+                weight, bias = group['params']
+            else:
+                weight = group['params'][0]
+                bias = None
+            state = self.state[weight]
+
+            for i,p in enumerate(group['params']):
                 if p.grad is None:
                     continue
                 d_p = p.grad
                 
-                p.add_(d_p, alpha=-group['lr'])
+                if self.add_noise and state["step"] > self.num_burn_in_steps:
+                    if i == 0:
+                        noise = state['noise_term']
+                    else:
+                        noise = state['noise_bias']
+
+                    # SGLD update-style:
+                    # noise.mul_(torch.tensor(group['lr']).mul(2).sqrt())/60000
+                    # d_p = d_p.mul(group['lr']) + noise
+                    # p.add_(-d_p)
+
+                    # pSGLD update style:
+                    # noise = noise.mul(torch.tensor(2*lr).sqrt()).mul(lr).div(60000)
+                    # p.add_(d_p + noise.div(group['lr']), alpha=-group['lr'])
+
+                    # Henripal's KSGLD update style:
+                    p.add_(d_p.div(2) + noise.mul(group['lr']).div(60000), alpha=-group['lr'])
+
+                    # print('step: ', state['step'])
+                    # print('noise_term variance: ', torch.var(noise))
+                    # print('noise_term std: ', torch.std(noise))
+                else:
+                    p.add_(d_p, alpha=-group['lr'])
         
         return loss
 
@@ -145,7 +179,11 @@ class KSGLD(Optimizer):
             self.state[mod]['gy'] = grad_output[0] * grad_output[0].size(0)
 
     def _precond(self, weight, bias, group, state):
-        """Applies preconditioning."""
+        """Applies preconditioning.
+        `noise_term` and `noise_bias` generated from standard normal distribution
+        with shape corresponds to gradient of weight and bias, respectively. 
+        Noise preconditioned following the exact procedure of the gradient preconditioning
+        """
         noise_term = None
         noise_bias = None
         if group['layer_type'] == 'Conv2d' and self.sua:
@@ -189,11 +227,14 @@ class KSGLD(Optimizer):
         # if noise_term is not None:
         #     print('noise_term variance: ', torch.var(noise_term))
         #     print('noise_term std: ', torch.std(noise_term))
-        #     print("noise size: ", noise_term.size())
         return g, gb, noise_term, noise_bias
 
     def _precond_sua(self, weight, bias, group, state):
-        """Preconditioning for KFAC SUA."""
+        """Preconditioning for KFAC SUA.
+        `noise_term` and `noise_bias` generated from standard normal distribution
+        with shape corresponds to gradient of weight and bias, respectively. 
+        Noise preconditioned following the exact procedure of the gradient preconditioning.
+        """
         noise_term = None
         noise_bias = None
         ixxt = state['ixxt']
@@ -238,7 +279,6 @@ class KSGLD(Optimizer):
         # if noise_term is not None:
         #     print('noise_term variance (SUA): ', torch.var(noise_term))
         #     print('noise_term std (SUA): ', torch.std(noise_term))
-        #     print("noise size: ", noise_term.size())
         return g, gb, noise_term, noise_bias
 
     def _compute_covs(self, group, state):

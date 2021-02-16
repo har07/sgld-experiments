@@ -75,7 +75,7 @@ ksgld.KSGLD:
   pi: True   # pi conrrection for Tikhonov regularization
   update_freq: 50
   alpha: 1.   # Running average parameter (if == 1, no r. ave.).
-  constraint_norm: False  # Scale the gradients by the squared fisher norm.
+  constraint_norm: True  # Scale the gradients by the squared fisher norm.
 eksgld.EKSGLD:
   eps: 0.01 # Tikhonov regularization
   sua: False
