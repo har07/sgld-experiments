@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 
+from torch.distributions import Normal
 from torch.optim.optimizer import Optimizer, required
 
 
@@ -64,6 +65,8 @@ class EKSGLD(Optimizer):
         """Performs one step of preconditioning."""
         loss = None
         for group in self.param_groups:
+            noise_term = None
+            noise_bias = None
             # Getting parameters
             if len(group['params']) == 2:
                 weight, bias = group['params']
@@ -71,6 +74,9 @@ class EKSGLD(Optimizer):
                 weight = group['params'][0]
                 bias = None
             state = self.state[weight]
+            if not 'step' in state:
+                state['step'] = 0
+            state['step'] += 1
             # Update convariances and inverses
             if self._iteration_counter % self.update_freq == 0:
                 self._compute_kfe(group, state)
@@ -82,9 +88,14 @@ class EKSGLD(Optimizer):
                     self._precond_intra_sua(weight, bias, group, state)
             else:
                 if self.ra:
-                    self._precond_ra(weight, bias, group, state)
+                    noise_term, noise_bias = self._precond_ra(weight, bias, group, state)
                 else:
                     self._precond_intra(weight, bias, group, state)
+
+            if noise_term is not None:
+                state['noise_term'] = noise_term
+            if noise_bias is not None and bias is not None:
+                state['noise_bias'] = noise_bias
         self._iteration_counter += 1
 
         # update network parameters using simple SGD
@@ -106,25 +117,17 @@ class EKSGLD(Optimizer):
                 
                 if self.add_noise and state["step"] > self.num_burn_in_steps:
                     if i == 0:
+                        # print('noise_term')
                         noise = state['noise_term']
                     else:
                         noise = state['noise_bias']
+                        # print('noise_bias')
 
-                    # SGLD update-style:
-                    # noise.mul_(torch.tensor(group['lr']).mul(2).sqrt())/60000
-                    # d_p = d_p.mul(group['lr']) + noise
-                    # p.add_(-d_p)
-
-                    # pSGLD update style:
-                    # noise = noise.mul(torch.tensor(2*lr).sqrt()).mul(lr).div(60000)
-                    # p.add_(d_p + noise.div(group['lr']), alpha=-group['lr'])
+                    # print('grad size: ', d_p.size())
+                    # print('noise size: ', noise.size())
 
                     # Henripal's KSGLD update style:
                     p.add_(d_p.div(2) + noise.mul(group['lr']).div(60000), alpha=-group['lr'])
-
-                    # print('step: ', state['step'])
-                    # print('noise_term variance: ', torch.var(noise))
-                    # print('noise_term std: ', torch.std(noise))
                 else:
                     p.add_(d_p, alpha=-group['lr'])
         
@@ -140,6 +143,8 @@ class EKSGLD(Optimizer):
 
     def _precond_ra(self, weight, bias, group, state):
         """Applies preconditioning."""
+        noise_term = None
+        noise_bias = None
         kfe_x = state['kfe_x']
         kfe_gy = state['kfe_gy']
         m2 = state['m2']
@@ -154,19 +159,44 @@ class EKSGLD(Optimizer):
         if bias is not None:
             gb = bias.grad.data
             g = torch.cat([g, gb.view(gb.shape[0], 1)], dim=1)
+        noise_size = g.size()
         g_kfe = torch.mm(torch.mm(kfe_gy.t(), g), kfe_x)
-        m2.mul_(self.alpha).add_((1. - self.alpha) * bs, g_kfe**2)
-        g_nat_kfe = g_kfe / (m2 + self.eps)
+        m2_tmp = m2.mul(self.alpha).add(g_kfe**2, alpha=(1. - self.alpha) * bs)
+        g_nat_kfe = g_kfe / (m2_tmp + self.eps)
         g_nat = torch.mm(torch.mm(kfe_gy, g_nat_kfe), kfe_x.t())
+        if self.add_noise and state["step"] > self.num_burn_in_steps:
+            langevin_noise = Normal(
+                        torch.zeros(noise_size).cuda(),
+                        torch.ones(noise_size).cuda()
+                    )
+            noise_term = langevin_noise.sample()
+            g_kfe_noise = torch.mm(torch.mm(kfe_gy.t(), noise_term), kfe_x)
+            m2_tmp_noise = m2.mul(self.alpha).add(g_kfe_noise**2, alpha=(1. - self.alpha) * bs)
+            g_nat_kfe_noise = g_kfe_noise / (m2_tmp_noise + self.eps)
+            g_nat_noise = torch.mm(torch.mm(kfe_gy, g_nat_kfe_noise), kfe_x.t())
         if bias is not None:
             gb = g_nat[:, -1].contiguous().view(*bias.shape)
             bias.grad.data = gb
             g_nat = g_nat[:, :-1]
+
+            if noise_term is not None:
+                noise_bias = g_nat_noise[:, -1].contiguous().view(*bias.shape)
+                g_nat_noise = g_nat_noise[:, :-1]
+                # print('bias grad size: ', gb.size(), 'g_nat: ', g_nat.size())
+                # print('noise bias size: ', noise_bias.size(), 'g_nat_noise: ', g_nat_noise.size())
+
         g_nat = g_nat.contiguous().view(*s)
+        if noise_term is not None:
+            g_nat_noise = g_nat_noise.contiguous().view(*s)
+            noise_term = g_nat_noise
+            # print('weight grad size: ', g_nat.size())
+            # print('noise term size: ', g_nat_noise.size())
         # end 2
         
-        # 2. putting back the natural gradient in the parameter gradients
+        # 3. putting back the natural gradient in the parameter gradients
         weight.grad.data = g_nat
+
+        return noise_term, noise_bias
 
     def _precond_intra(self, weight, bias, group, state):
         """Applies preconditioning."""

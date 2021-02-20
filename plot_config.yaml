@@ -15,19 +15,23 @@ scalar_data:
     tag: "Acc/train"
     plot_label: "EKFAC"
     # best acc: 99.24, acc at epoch 10: 99.24
+  - path: "/content/drive/MyDrive/Tesis/langevin/eksgld_20210220_131448/events.out.tfevents.1613826893.96668aae32ca.1575.0"
+    tag: "Acc/train"
+    plot_label: "EKSGLD"
+    # best acc: 99.27, acc at epoch 10: 99.26
   - path: "/content/drive/MyDrive/Tesis/langevin/psgld_20210208_074428/events.out.tfevents.1612774082.7816ab031c57.2569.0"
     tag: "Acc/train"
     plot_label: "pSGLD"
     # best acc: 99.28, acc at epoch 10: 99.24
-  - path: "/content/drive/MyDrive/Tesis/langevin/asgld_20210208_060145/events.out.tfevents.1612767296.7816ab031c57.1138.0"
-    tag: "Acc/train"
-    plot_label: "ASGLD"
-    # best acc: 99.24, acc at epoch 10: 99.24
-  - path: "/content/drive/MyDrive/Tesis/langevin/sgld3_20210204_001246/events.out.tfevents.1612397571.8bdd6e780295.690.0"
-    tag: "Acc/train"
-    plot_label: "SGLD"
+  # - path: "/content/drive/MyDrive/Tesis/langevin/asgld_20210208_060145/events.out.tfevents.1612767296.7816ab031c57.1138.0"
+  #   tag: "Acc/train"
+  #   plot_label: "ASGLD"
+  #   # best acc: 99.24, acc at epoch 10: 99.24
+  # - path: "/content/drive/MyDrive/Tesis/langevin/sgld3_20210204_001246/events.out.tfevents.1612397571.8bdd6e780295.690.0"
+  #   tag: "Acc/train"
+  #   plot_label: "SGLD"
 manual_data:
   - data: [94.669,96.802,97.578,98.043,98.362,98.547,98.661,98.737,98.828,98.893]
     plot_label: "RMSprop"
-  - data: [86.467,93.709,95.424,96.269,96.978,97.393,97.546,97.807,97.848,97.980]
-    plot_label: "SGD"
+  # - data: [86.467,93.709,95.424,96.269,96.978,97.393,97.546,97.807,97.848,97.980]
+  #   plot_label: "SGD"

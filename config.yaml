@@ -1,25 +1,25 @@
 seed: 1
-epoch: 2
-block_size: 0
-block_decay: .0
-preconditioner: ekfac.EKFAC
-optimizer: optim.SGD
-accept_model: False
+epoch: 10
+block_size: 5
+block_decay: .5
+preconditioner: None
+optimizer: eksgld.EKSGLD
+accept_model: True
 ekfac.EKFAC:
   eps: 1.e-3
   sua: False
   ra: True
   update_freq: 50
-  alpha: .75
+  alpha: .25
 eksgld.EKSGLD:
-  lr: 1.5e-3
+  lr: 2.5e-3
   num_burn_in_steps: 600
   add_noise: False
   eps: 1.e-3   # Tikhonov regularization
-  sua: True  # Applies SUA approximation.
+  sua: False  # Applies SUA approximation.
   ra: True
   update_freq: 50
-  alpha: .75   # Running average parameter (if == 1, no r. ave.).
+  alpha: .25   # Running average parameter (if == 1, no r. ave.).
 ksgld.KSGLD:
   lr: 1.5e-3
   num_burn_in_steps: 600
@@ -38,7 +38,7 @@ kfac.KFAC:
   alpha: 1.   # Running average parameter (if == 1, no r. ave.).
   constraint_norm: False  # Scale the gradients by the squared fisher norm.
 optim.SGD:
-  lr: 1.e-3
+  lr: 4.e-3
 optim.RMSprop:
   lr: 5.e-4
   weight_decay: 1.e-2

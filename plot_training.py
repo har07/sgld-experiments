@@ -77,7 +77,7 @@ def plot_tensorflow_log():
 
     plt.xlabel(config["xlabel"])
     plt.ylabel(config["ylabel"])
-    plt.ylim(bottom=98.5, top=99.5)
+    plt.ylim(bottom=98.9, top=99.4)
     plt.legend(loc=config["legend_loc"], frameon=True)
     plt.show()
 

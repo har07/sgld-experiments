@@ -91,10 +91,7 @@ class EKFAC(Optimizer):
         kfe_x = state['kfe_x']
         kfe_gy = state['kfe_gy']
         m2 = state['m2']
-        # 1. taking the gradient in the parameter gradients
         g = weight.grad.data
-
-        # 2. multiplying with the inverse Fisher
         s = g.shape
         bs = self.state[group['mod']]['x'].size(0)
         if group['layer_type'] == 'Conv2d':
@@ -103,7 +100,7 @@ class EKFAC(Optimizer):
             gb = bias.grad.data
             g = torch.cat([g, gb.view(gb.shape[0], 1)], dim=1)
         g_kfe = torch.mm(torch.mm(kfe_gy.t(), g), kfe_x)
-        m2.mul_(self.alpha).add_((1. - self.alpha) * bs, g_kfe**2)
+        m2.mul_(self.alpha).add_(g_kfe**2, alpha=(1. - self.alpha) * bs)
         g_nat_kfe = g_kfe / (m2 + self.eps)
         g_nat = torch.mm(torch.mm(kfe_gy, g_nat_kfe), kfe_x.t())
         if bias is not None:
@@ -111,9 +108,6 @@ class EKFAC(Optimizer):
             bias.grad.data = gb
             g_nat = g_nat[:, :-1]
         g_nat = g_nat.contiguous().view(*s)
-        # end 2
-        
-        # 2. putting back the natural gradient in the parameter gradients
         weight.grad.data = g_nat
 
     def _precond_intra(self, weight, bias, group, state):
@@ -197,7 +191,7 @@ class EKFAC(Optimizer):
             gb = bias.grad.view(-1, 1, 1, 1).expand(-1, -1, s[2], s[3])
             g = torch.cat([g, gb], dim=1)
         g_kfe = self._to_kfe_sua(g, kfe_x, kfe_gy)
-        m2.mul_(self.alpha).add_((1. - self.alpha) * bs, g_kfe**2)
+        m2.mul_(self.alpha).add_(g_kfe**2, alpha=(1. - self.alpha) * bs)
         g_nat_kfe = g_kfe / (m2 + self.eps)
         g_nat = self._to_kfe_sua(g_nat_kfe, kfe_x.t(), kfe_gy.t())
         if bias is not None:
