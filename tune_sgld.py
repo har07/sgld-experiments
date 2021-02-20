@@ -15,6 +15,7 @@ import lib.sgld as sgld
 import lib.sgld2 as sgld2
 import lib.sgld3 as sgld3
 import lib.asgld as asgld
+import lib.ekfac_precond as ekfac
 import lib.lr_setter as lr_setter
 import argparse
 import datetime
@@ -62,10 +63,11 @@ blocksize = int(args.blocksize)
 blockdecay = float(args.blockdecay)
 tune_batch_size = bool(args.batch)
 optimizer_name = str(args.optimizer)
-if not optimizer_name in ['sgld', 'sgld2', 'sgld3', 'psgld', 'psgld2', 'psgld3', 'asgld', 'ksgld']:
+if not optimizer_name in ['sgld', 'sgld2', 'sgld3', 'psgld', 'psgld2', 'psgld3', 
+                            'asgld', 'ksgld', 'ekfac']:
     raise ValueError('optimizer is not supported yet: ' + optimizer_name)
 
-def train(model, optimizer, train_loader, test_loader, epochs, lr):
+def train(model, optimizer, train_loader, test_loader, epochs, lr, precond=None):
     current_lr = lr
     # check if optimizer.step has 'lr' param
     step_args = inspect.getfullargspec(optimizer.step)
@@ -82,6 +84,8 @@ def train(model, optimizer, train_loader, test_loader, epochs, lr):
             loss = F.nll_loss(output, target)
             loss.backward()
 
+            if precond:
+                precond.step()
             if blocksize > 0 and blockdecay > 0 and lr_param:
                 optimizer.step(lr=current_lr)
             else:
@@ -111,6 +115,7 @@ def objective(trial):
     train_loader, test_loader = lib.dataset.make_datasets(bs=batch_size, test_bs=batch_size)
     model = model.cuda()
 
+    precond = None
     if optimizer_name == "sgld":
         optimizer, lr = sgld_optimizer(model.parameters(), trial)
     elif optimizer_name == "sgld2":
@@ -127,8 +132,10 @@ def objective(trial):
         optimizer, lr = asgld_optimizer(model.parameters(), trial)
     elif optimizer_name == "ksgld":
         optimizer, lr = ksgld_optimizer(model, trial)
+    elif optimizer_name == "ekfac":
+        optimizer, precond, lr = ekfac_preconditioner(model, trial)
 
-    accuracy = train(model, optimizer, train_loader, test_loader, epochs, lr)
+    accuracy = train(model, optimizer, train_loader, test_loader, epochs, lr, precond=precond)
     return accuracy
 
 def print_stats(study):
@@ -217,6 +224,14 @@ def ksgld_optimizer(model, trial):
     optimizer = ksgld.KSGLD(model, eps=1.e-3, lr=lr, sua=True, pi=False, alpha=1., update_freq=50, 
                             num_burn_in_steps=num_burn_in_steps, add_noise=True)
     return optimizer, lr
+
+def ekfac_preconditioner(model, trial):
+    lr = trial.suggest_float("lr", 1.e-3, 1.e-2, step=5.e-4)
+    eps = trial.suggest_categorical("eps", [1e-3, 5e-4, 1e-4])
+    alpha = trial.suggest_categorical("alpha", [.25,.5,.75, .9])
+    optimizer = optim.SGD(model.parameters(), lr=lr)
+    precond = ekfac.EKFAC(model, eps=eps, alpha=alpha, sua=False, ra=True, update_freq=50)
+    return optimizer, precond, lr
 
 def main():
     # Add stream handler of stdout to show the messages
