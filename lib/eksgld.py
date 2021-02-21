@@ -10,8 +10,8 @@ from torch.optim.optimizer import Optimizer, required
 # and support burn in steps.
 class EKSGLD(Optimizer):
 
-    def __init__(self, net, eps, lr=required, sua=False, ra=False, update_freq=1,
-                 alpha=.75, add_noise=True, num_burn_in_steps=300):
+    def __init__(self, net, eps, lr=required, train_size=required, sua=False, ra=False, update_freq=1,
+                 alpha=.75, add_noise=True, num_burn_in_steps=300, update_style='psgld'):
         """ EKFAC Preconditionner for Linear and Conv2d layers.
 
         Computes the EKFAC of the second moment of the gradients.
@@ -20,12 +20,14 @@ class EKSGLD(Optimizer):
         Args:
             net (torch.nn.Module): Network to precondition.
             eps (float): Tikhonov regularization parameter for the inverses.
+            lr (float): Learning rate (step size).
             sua (bool): Applies SUA approximation.
             ra (bool): Computes stats using a running average of averaged gradients
                 instead of using a intra minibatch estimate
             update_freq (int): Perform inverses every update_freq updates.
             alpha (float): Running average parameter
             num_burn_in_steps (int): Perform EKFAC update without gaussian noise
+            update_style (str): One of sgld, psgld and ksgld.
         """
         self.eps = eps
         self.sua = sua
@@ -34,10 +36,13 @@ class EKSGLD(Optimizer):
         self.alpha = alpha
         self.num_burn_in_steps = num_burn_in_steps
         self.add_noise = add_noise
+        self.update_style = update_style.lower()
         self.params = []
         self._fwd_handles = []
         self._bwd_handles = []
         self._iteration_counter = 0
+        if self.update_style not in ['sgld', 'psgld', 'ksgld']:
+            raise NotImplementedError
         if not self.ra and self.alpha != 1.:
             raise NotImplementedError
         for mod in net.modules():
@@ -57,7 +62,7 @@ class EKSGLD(Optimizer):
                         d['gathering_filter'] = self._get_gathering_filter(mod)
                 self.params.append(d)
 
-        defaults = dict(lr=lr)
+        defaults = dict(lr=lr, train_size=train_size)
         super(EKSGLD, self).__init__(self.params, defaults)
 
     @torch.no_grad()
@@ -117,17 +122,22 @@ class EKSGLD(Optimizer):
                 
                 if self.add_noise and state["step"] > self.num_burn_in_steps:
                     if i == 0:
-                        # print('noise_term')
                         noise = state['noise_term']
                     else:
                         noise = state['noise_bias']
-                        # print('noise_bias')
 
-                    # print('grad size: ', d_p.size())
-                    # print('noise size: ', noise.size())
-
-                    # Henripal's KSGLD update style:
-                    p.add_(d_p.div(2) + noise.mul(group['lr']).div(60000), alpha=-group['lr'])
+                    if self.update_style == 'sgld':
+                        # SGLD update-style:
+                        noise.mul_(torch.tensor(group['lr']).mul(2).sqrt())/group["train_size"]
+                        d_p = d_p.mul(group['lr']) + noise
+                        p.add_(-d_p)
+                    elif self.update_style == 'psgld':
+                        # pSGLD update style:
+                        noise = noise.mul(torch.tensor(2*group['lr']).sqrt()).mul(group['lr']).div(group["train_size"])
+                        p.add_(d_p + noise.div(group['lr']), alpha=-group['lr'])
+                    else:
+                        # Henripal's KSGLD update style:
+                        p.add_(d_p.div(2) + noise.mul(group['lr']).div(group["train_size"]), alpha=-group['lr'])
                 else:
                     p.add_(d_p, alpha=-group['lr'])
         

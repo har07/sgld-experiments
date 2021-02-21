@@ -8,6 +8,7 @@ import lib.dataset
 import lib.model
 import lib.evaluation
 import lib.ksgld as ksgld
+import lib.eksgld as eksgld
 import lib.psgld as psgld
 import lib.psgld2 as psgld2
 import lib.psgld3 as psgld3
@@ -64,7 +65,7 @@ blockdecay = float(args.blockdecay)
 tune_batch_size = bool(args.batch)
 optimizer_name = str(args.optimizer)
 if not optimizer_name in ['sgld', 'sgld2', 'sgld3', 'psgld', 'psgld2', 'psgld3', 
-                            'asgld', 'ksgld', 'ekfac']:
+                            'asgld', 'ksgld', 'ekfac', 'eksgld']:
     raise ValueError('optimizer is not supported yet: ' + optimizer_name)
 
 def train(model, optimizer, train_loader, test_loader, epochs, lr, precond=None):
@@ -134,6 +135,8 @@ def objective(trial):
         optimizer, lr = ksgld_optimizer(model, trial)
     elif optimizer_name == "ekfac":
         optimizer, precond, lr = ekfac_preconditioner(model, trial)
+    elif optimizer_name == "eksgld":
+        optimizer, lr = eksgld_optimizer(model, trial)
 
     accuracy = train(model, optimizer, train_loader, test_loader, epochs, lr, precond=precond)
     return accuracy
@@ -232,6 +235,16 @@ def ekfac_preconditioner(model, trial):
     optimizer = optim.SGD(model.parameters(), lr=lr)
     precond = ekfac.EKFAC(model, eps=eps, alpha=alpha, sua=False, ra=True, update_freq=50)
     return optimizer, precond, lr
+
+def eksgld_optimizer(model, trial):
+    lr = trial.suggest_categorical("lr", [1.e-3, 2.e-3, 2.5e-3, 3e-3, 5e-3, 1e-2])
+    num_burn_in_steps = trial.suggest_categorical("num_burn_in_steps", [300, 600])
+    eps = trial.suggest_categorical("eps", [1e-3, 5e-4, 1e-4])
+    alpha = trial.suggest_categorical("alpha", [.15, .25, .5, .75])
+    update_style = trial.suggest_categorical("update_style", ['sgld', 'psgld', 'ksgld'])
+    optimizer = eksgld.EKSGLD(model, eps=eps, lr=lr, train_size=60000, sua=False, ra=True, alpha=alpha, 
+                                update_freq=50, num_burn_in_steps=num_burn_in_steps, update_style=update_style)
+    return optimizer, lr
 
 def main():
     # Add stream handler of stdout to show the messages

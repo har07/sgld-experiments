@@ -13,6 +13,7 @@ ekfac.EKFAC:
   alpha: .25
 eksgld.EKSGLD:
   lr: 2.5e-3
+  train_size: 60000
   num_burn_in_steps: 600
   add_noise: False
   eps: 1.e-3   # Tikhonov regularization
