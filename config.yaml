@@ -96,3 +96,5 @@ asgld.ASGLD:
 dataset:
   train_batch: 500
   test_batch: 200
+percentage_tosample: .1
+step_samples: 10
