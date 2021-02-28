@@ -11,14 +11,14 @@ scalar_data:
     tag: "Acc/train"
     plot_label: "K-FAC"
     # best acc: 99.31, acc at epoch 10: 99.31
-  - path: "/content/drive/MyDrive/Tesis/langevin/ekfac_20210216_125748/events.out.tfevents.1613480272.8ea2b2a7126b.646.0"
+  - path: "/content/drive/MyDrive/Tesis/langevin/ekfac_20210223_203200/EKFAC_Batch500_Lr5e_3/events.out.tfevents.1614085631.484ca10921db.297.0"
     tag: "Acc/train"
     plot_label: "EKFAC"
-    # best acc: 99.24, acc at epoch 10: 99.24
-  - path: "/content/drive/MyDrive/Tesis/langevin/eksgld_20210220_131448/events.out.tfevents.1613826893.96668aae32ca.1575.0"
+    # best acc: 99.33, acc at epoch 10: 99.13
+  - path: "/content/drive/MyDrive/Tesis/langevin/eksgld_20210221_060026/EKFAC_KSGLD_Batch200_Lr2e_3/events.out.tfevents.1613889704.3e6585d97c0d.891.0"
     tag: "Acc/train"
     plot_label: "EKSGLD"
-    # best acc: 99.27, acc at epoch 10: 99.26
+    # best acc: 99.33, acc at epoch 10: 99.33
   - path: "/content/drive/MyDrive/Tesis/langevin/psgld_20210208_074428/events.out.tfevents.1612774082.7816ab031c57.2569.0"
     tag: "Acc/train"
     plot_label: "pSGLD"

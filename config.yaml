@@ -10,19 +10,20 @@ ekfac.EKFAC:
   sua: False
   ra: True
   update_freq: 50
-  alpha: .25
+  alpha: .5
 eksgld.EKSGLD:
-  lr: 2.5e-3
+  lr: 5.e-3
   train_size: 60000
   num_burn_in_steps: 600
-  add_noise: False
+  add_noise: True
   eps: 1.e-3   # Tikhonov regularization
   sua: False  # Applies SUA approximation.
   ra: True
   update_freq: 50
-  alpha: .25   # Running average parameter (if == 1, no r. ave.).
+  alpha: .5   # Running average parameter (if == 1, no r. ave.).
+  update_style: ksgld
 ksgld.KSGLD:
-  lr: 1.5e-3
+  lr: 3.2e-2
   num_burn_in_steps: 600
   add_noise: True
   eps: 1.e-3   # Tikhonov regularization
@@ -93,5 +94,5 @@ asgld.ASGLD:
   eps: 5.e-5
   noise: 2.e-2
 dataset:
-  train_batch: 200
+  train_batch: 500
   test_batch: 200

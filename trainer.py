@@ -64,6 +64,7 @@ test_batch = dataset_params['test_batch']
 torch.cuda.set_device(0)
 torch.manual_seed(seed)
 random.seed(seed)
+np.random.seed(seed)
 model = lib.model.MnistModel()
 train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
 model = model.cuda()

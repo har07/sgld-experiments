@@ -107,7 +107,7 @@ def objective(trial):
     batch_size = 100
     if tune_batch_size:
         # batch_size = trial.suggest_int("batch_size", 50, 1000, step=50)
-        batch_size = trial.suggest_categorical("batch_size", [200, 500])
+        batch_size = trial.suggest_categorical("batch_size", [200])
 
     torch.cuda.set_device(0)
     torch.manual_seed(seed)
