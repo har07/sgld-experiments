@@ -19,6 +19,7 @@ import lib.asgld as asgld
 import lib.ksgld as ksgld
 import lib.eksgld as eksgld
 import lib.lr_setter as lr_setter
+import lib.sampling as sampling
 import pysgmcmc.optimizers.sgld as pysgmcmc_sgld
 import argparse
 import numpy as np
@@ -27,6 +28,7 @@ import yaml
 import datetime
 import inspect
 from torch.utils.tensorboard import SummaryWriter
+from os import makedirs
 
 default_yaml =  "config.yaml"
 default_silent = False
@@ -56,6 +58,9 @@ block_size = config['block_size']
 block_decay = config['block_decay']
 optimizer_name = config['optimizer']
 precond_name = config['preconditioner']
+percentage_tosample = config['percentage_tosample']
+step_samples = config['step_samples']
+step_save_state = config['step_save_state']
 
 dataset_params = config['dataset']
 train_batch = dataset_params['train_batch']
@@ -106,6 +111,17 @@ current_lr = optim_params["lr"]
 step_args = inspect.getfullargspec(optimizer.step)
 lr_param = 'lr' in step_args.args
 
+val_accuracy=0
+stdev_acc = []
+std_median = 0
+std_max = 0
+burn_in = 0
+if 'num_burn_in_steps' in optim_params:
+    burn_in = optim_params['num_burn_in_steps']
+batch_evaluator = lib.evaluation.BatchEvaluator(test_loader, burn_in=burn_in)
+
+state_accum = []
+
 for epoch in range(1, epochs+1):
     t0 = time.time()
 
@@ -130,6 +146,32 @@ for epoch in range(1, epochs+1):
         accuracy = np.mean(prediction.eq(target.data).cpu().numpy())*100
         # print('step: ', step, ', accuracy: ', accuracy, ', loss: ', loss.item())
 
+        statedict = model.state_dict().copy()
+        for k, v in statedict.items():
+            statedict.update({k: v.cpu().numpy().tolist()})
+
+        stdev_acc.append(sampling.sample(seed,
+                                statedict,
+                                percentage_tosample))
+        batch_accuracy = batch_evaluator.iterate(step, model)
+
+        if step%step_samples == 0:
+            sample_mat = np.vstack(stdev_acc)
+            stdev_acc = []
+            stdevs = np.std(sample_mat, axis = 0)
+            std_median = np.median(stdevs)
+            std_max = np.max(stdevs)
+
+        if step%step_save_state == 0:
+            statedict = model.state_dict().copy()
+            for k, v in statedict.items():
+                statedict.update({k: v.cpu().numpy().tolist()})
+
+            state_accum.append(model.state_dict())
+        else:
+            statedict = {}
+
+
     # measure training time
     elapsed = time.time() - t0
 
@@ -150,5 +192,6 @@ for epoch in range(1, epochs+1):
                 .format(epoch, elapsed, np.mean(loss.item()), np.mean(accuracy), val_accuracy))
 
 # Save the model weights.
+torch.save(state_accum, save_model_path + "/" + session_id+".accum.pt")
 torch.save(model.state_dict(), save_model_path + "/" + session_id+".pt")
 writer.flush()

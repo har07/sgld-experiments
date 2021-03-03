@@ -94,5 +94,8 @@ asgld.ASGLD:
   eps: 5.e-5
   noise: 2.e-2
 dataset:
-  train_batch: 500
+  train_batch: 200
   test_batch: 200
+percentage_tosample: .1
+step_samples: 10
+step_save_state: 100
