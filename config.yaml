@@ -3,8 +3,8 @@ epoch: 10
 block_size: 5
 block_decay: .5
 preconditioner: None
-optimizer: eksgld.EKSGLD
-accept_model: True
+optimizer: psgld2.pSGLD
+accept_model: False
 ekfac.EKFAC:
   eps: 1.e-3
   sua: False
@@ -40,7 +40,7 @@ kfac.KFAC:
   alpha: 1.   # Running average parameter (if == 1, no r. ave.).
   constraint_norm: False  # Scale the gradients by the squared fisher norm.
 optim.SGD:
-  lr: 4.e-3
+  lr: 1.e-1
 optim.RMSprop:
   lr: 5.e-4
   weight_decay: 1.e-2

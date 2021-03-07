@@ -1,5 +1,11 @@
 import torch.nn as nn
 import torch.nn.functional as F
+from skimage import io, transform
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms, utils
+import glob
+import os
+import PIL
 
 class MnistModel(nn.Module):
     def __init__(self, n_filters1=64,
@@ -32,3 +38,28 @@ class MnistModel(nn.Module):
         if self.dropout: x = F.dropout(x, training=self.training)
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
+
+class NotMnist(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.filelist = glob.glob(os.path.join(self.root_dir, '**', '*.png'))
+        new_filelist = []
+        for file in self.filelist:
+            try:
+                io.imread(file)
+                new_filelist.append(file)
+            except:
+                pass
+                
+        self.filelist = new_filelist
+        
+    def __len__(self):
+        return len(self.filelist)
+        
+    def __getitem__(self, idx):
+        image = io.imread(self.filelist[idx])
+        image = PIL.Image.fromarray(image)
+        if self.transform:
+            return self.transform(image)
+        return image
