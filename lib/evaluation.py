@@ -41,7 +41,6 @@ class BatchEvaluator:
             with torch.no_grad():
                 if self.cum_output:
                     for i, (data, target) in enumerate(self.test_loader):
-                        data, target = Variable(data, volatile=True), Variable(target, volatile=True)
                         data, target = data.cuda(), target.cuda()
                         output = model(data)
                         self.cum_output[i] = self.cum_output[i] + output
@@ -50,7 +49,6 @@ class BatchEvaluator:
                         accuracies.append(val_accuracy)
                 else:
                     for i, (data, target) in enumerate(self.test_loader):
-                        data, target = Variable(data, volatile=True), Variable(target, volatile=True)
                         data, target = data.cuda(), target.cuda()
                         output = model(data)
                         self.cum_output.append(output)

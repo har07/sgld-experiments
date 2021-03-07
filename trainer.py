@@ -118,7 +118,8 @@ std_max = 0
 burn_in = 0
 if 'num_burn_in_steps' in optim_params:
     burn_in = optim_params['num_burn_in_steps']
-batch_evaluator = lib.evaluation.BatchEvaluator(test_loader, burn_in=burn_in)
+batch_evaluator = lib.evaluation.BatchEvaluator(test_loader, burn_in=burn_in, thinning=100)
+# print('burn_in: ', burn_in)
 
 state_accum = []
 
@@ -155,14 +156,14 @@ for epoch in range(1, epochs+1):
                                 percentage_tosample))
         batch_accuracy = batch_evaluator.iterate(step, model)
 
-        if step%step_samples == 0:
+        if step > burn_in and step%step_samples == 0:
             sample_mat = np.vstack(stdev_acc)
             stdev_acc = []
             stdevs = np.std(sample_mat, axis = 0)
             std_median = np.median(stdevs)
             std_max = np.max(stdevs)
 
-        if step%step_save_state == 0:
+        if step > burn_in and step%step_save_state == 0:
             statedict = model.state_dict().copy()
             for k, v in statedict.items():
                 statedict.update({k: v.cpu().numpy().tolist()})
