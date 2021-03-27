@@ -5,6 +5,7 @@ block_decay: .5
 preconditioner: None
 optimizer: psgld2.pSGLD
 accept_model: False
+model: resnet.ResNet34
 ekfac.EKFAC:
   eps: 1.e-3
   sua: False

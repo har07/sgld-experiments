@@ -7,11 +7,7 @@ import lib.dataset
 import lib.model
 import lib.evaluation
 import lib.sgd as sgd
-import lib.sgld as sgld
-import lib.psgld as psgld
 import lib.psgld2 as psgld2
-import lib.psgld3 as psgld3
-import lib.sgld2 as sgld2
 import lib.sgld3 as sgld3
 import lib.ekfac_precond as ekfac
 import lib.kfac_precond as kfac
@@ -20,7 +16,8 @@ import lib.ksgld as ksgld
 import lib.eksgld as eksgld
 import lib.lr_setter as lr_setter
 import lib.sampling as sampling
-import pysgmcmc.optimizers.sgld as pysgmcmc_sgld
+import model.resnet as resnet
+import model.densenet as densenet
 import argparse
 import numpy as np
 import time
@@ -32,7 +29,7 @@ from os import makedirs
 
 default_yaml =  "config.yaml"
 default_silent = False
-save_model_path = "/content/kfac-backpack"
+save_model_path = "/content/sgld-experiments"
 session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 parser = argparse.ArgumentParser(
@@ -63,6 +60,9 @@ step_samples = config['step_samples']
 step_save_state = config['step_save_state']
 
 dataset_params = config['dataset']
+dataset_name = dataset_params['name']
+if dataset_name not in ['MNIST','CIFAR10']:
+    raise NotImplementedError
 train_batch = dataset_params['train_batch']
 test_batch = dataset_params['test_batch']
 
@@ -70,8 +70,18 @@ torch.cuda.set_device(0)
 torch.manual_seed(seed)
 random.seed(seed)
 np.random.seed(seed)
-model = lib.model.MnistModel()
-train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
+
+print('decay size: ', block_size, ', decay rate: ', block_decay)
+print('train batch size: ', train_batch, ', test batch size: ', test_batch)
+
+if dataset_name == "MNIST":
+    model = lib.model.MnistModel()
+    train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
+else:
+    model_name = config['model']
+    model = eval(model_name)()
+    train_loader, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
+    
 model = model.cuda()
 
 optim_params = {}
@@ -108,8 +118,8 @@ step = 0
 current_lr = optim_params["lr"]
 
 # check if optimizer.step has 'lr' param
-step_args = inspect.getfullargspec(optimizer.step)
-lr_param = 'lr' in step_args.args
+step_args = inspect.signature(optimizer.step)
+lr_param = 'lr' in step_args.parameters
 
 val_accuracy=0
 stdev_acc = []
