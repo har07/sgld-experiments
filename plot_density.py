@@ -51,30 +51,30 @@ def plot_non_bayesian():
     model.eval()
 
     # Plot MNIST
-    probas = []
-    acc = []
+    # probas = []
+    # acc = []
 
-    for data, target in test_loader:
-        data = data.cuda()
-        target = target.cuda()
-        output = model(data)
-        prediction = output.data.max(1)[1]
-        proba = output.data.max(1)[0]
-        probas.append(proba.cpu().numpy())
-        acc.append(prediction.eq(target.data).cpu().numpy())
+    # for data, target in test_loader:
+    #     data = data.cuda()
+    #     target = target.cuda()
+    #     output = model(data)
+    #     prediction = output.data.max(1)[1]
+    #     proba = output.data.max(1)[0]
+    #     probas.append(proba.cpu().numpy())
+    #     acc.append(prediction.eq(target.data).cpu().numpy())
 
-    probas = np.hstack(probas)
-    acc = np.hstack(acc)
+    # probas = np.hstack(probas)
+    # acc = np.hstack(acc)
 
-    correct_probas = np.exp(probas[acc == 1])
-    incorrect_probas = np.exp(probas[acc == 0])
+    # correct_probas = np.exp(probas[acc == 1])
+    # incorrect_probas = np.exp(probas[acc == 0])
 
-    plt.hist(correct_probas, bins=20, density=True, alpha = .8, label='correct')
-    plt.hist(incorrect_probas, bins=20, density=True, alpha=.8, label='incorrect')
-    plt.xlabel('confidence in prediction')
-    plt.ylabel('normalized counts')
-    plt.legend()
-    plt.show()
+    # plt.hist(correct_probas, bins=20, density=True, alpha = .8, label='correct')
+    # plt.hist(incorrect_probas, bins=20, density=True, alpha=.8, label='incorrect')
+    # plt.xlabel('confidence in prediction')
+    # plt.ylabel('normalized counts')
+    # plt.legend()
+    # plt.show()
 
     # Plot Not MNIST
     notmnist_probas = []
@@ -86,12 +86,14 @@ def plot_non_bayesian():
     notmnist_probas = np.hstack(notmnist_probas)
     notmnist_probas = np.exp(notmnist_probas)
 
-    plt.hist(notmnist_probas, bins=20, density=True, alpha = .8)
-    plt.xlabel('confidence in prediction')
-    plt.ylabel('normalized count')
-    plt.show()
+    # plt.hist(notmnist_probas, bins=20, density=True, alpha = .8)
+    # plt.xlabel('confidence in prediction')
+    # plt.ylabel('normalized count')
+    # plt.show()
 
     sns.kdeplot(data=notmnist_probas)
+    plt.legend(labels=['SGD'])
+    plt.show()
 
 def plot_bayesian(path):
     statedict_noise_path = glob.glob(os.path.join(path, '*.accum.pt'))[0]
@@ -120,6 +122,8 @@ def plot_bayesian(path):
     bayes_averaged_probas_nm = np.mean(bayes_probas_nm, axis=0)
     bayes_max_probas_nm = np.exp(bayes_averaged_probas_nm.max(axis = 1))
     sns.kdeplot(data=bayes_max_probas_nm)
+    plt.legend(labels=[os.path.dirname(path)])
+    plt.show()
 
 
 plot_non_bayesian()
@@ -132,5 +136,3 @@ for subdir, dirs, files in os.walk(model_dir):
 for algor in algors:
     plot_bayesian(os.path.join(model_dir, algor))
 
-plt.legend(labels=['SGD']+algors)
-plt.show()
