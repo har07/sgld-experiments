@@ -157,30 +157,30 @@ for epoch in range(1, epochs+1):
         accuracy = np.mean(prediction.eq(target.data).cpu().numpy())*100
         # print('step: ', step, ', accuracy: ', accuracy, ', loss: ', loss.item())
 
-        statedict = model.state_dict().copy()
-        for k, v in statedict.items():
-            statedict.update({k: v.cpu().numpy().tolist()})
+        # statedict = model.state_dict().copy()
+        # for k, v in statedict.items():
+        #     statedict.update({k: v.cpu().numpy().tolist()})
 
-        stdev_acc.append(sampling.sample(seed,
-                                statedict,
-                                percentage_tosample))
-        batch_accuracy = batch_evaluator.iterate(step, model)
+        # stdev_acc.append(sampling.sample(seed,
+        #                         statedict,
+        #                         percentage_tosample))
+        # batch_accuracy = batch_evaluator.iterate(step, model)
 
-        if step > burn_in and step%step_samples == 0:
-            sample_mat = np.vstack(stdev_acc)
-            stdev_acc = []
-            stdevs = np.std(sample_mat, axis = 0)
-            std_median = np.median(stdevs)
-            std_max = np.max(stdevs)
+        # if step > burn_in and step%step_samples == 0:
+        #     sample_mat = np.vstack(stdev_acc)
+        #     stdev_acc = []
+        #     stdevs = np.std(sample_mat, axis = 0)
+        #     std_median = np.median(stdevs)
+        #     std_max = np.max(stdevs)
 
-        if step > burn_in and step%step_save_state == 0:
-            statedict = model.state_dict().copy()
-            for k, v in statedict.items():
-                statedict.update({k: v.cpu().numpy().tolist()})
+        # if step > burn_in and step%step_save_state == 0:
+        #     statedict = model.state_dict().copy()
+        #     for k, v in statedict.items():
+        #         statedict.update({k: v.cpu().numpy().tolist()})
 
-            state_accum.append(model.state_dict())
-        else:
-            statedict = {}
+        #     state_accum.append(model.state_dict())
+        # else:
+        #     statedict = {}
 
 
     # measure training time
@@ -203,6 +203,6 @@ for epoch in range(1, epochs+1):
                 .format(epoch, elapsed, np.mean(loss.item()), np.mean(accuracy), val_accuracy))
 
 # Save the model weights.
-torch.save(state_accum, save_model_path + "/" + session_id+".accum.pt")
+# torch.save(state_accum, save_model_path + "/" + session_id+".accum.pt")
 torch.save(model.state_dict(), save_model_path + "/" + session_id+".pt")
 writer.flush()
