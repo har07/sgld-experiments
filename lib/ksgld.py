@@ -10,7 +10,7 @@ from torch.optim.optimizer import Optimizer, required
 # and support burn in steps.
 class KSGLD(Optimizer):
 
-    def __init__(self, net, eps, lr=required, sua=False, pi=False, update_freq=1,
+    def __init__(self, net, eps, lr=required, train_size=required, sua=False, pi=False, update_freq=1,
                  alpha=1.0, constraint_norm=False, add_noise=True, num_burn_in_steps=300):
         """ K-FAC Optimizer for Linear and Conv2d layers.
 
@@ -54,7 +54,7 @@ class KSGLD(Optimizer):
                 d = {'params': params, 'mod': mod, 'layer_type': mod_class}
                 self.params.append(d)
         
-        defaults = dict(lr=lr)
+        defaults = dict(lr=lr, train_size=train_size)
         super(KSGLD, self).__init__(self.params, defaults)
 
     @torch.no_grad()
@@ -149,16 +149,16 @@ class KSGLD(Optimizer):
                         noise = state['noise_bias']
 
                     # SGLD update-style:
-                    # noise.mul_(torch.tensor(group['lr']).mul(2).sqrt())/60000
+                    # noise.mul_(torch.tensor(group['lr']).mul(2).sqrt())/group["train_size"]
                     # d_p = d_p.mul(group['lr']) + noise
                     # p.add_(-d_p)
 
                     # pSGLD update style:
-                    # noise = noise.mul(torch.tensor(2*lr).sqrt()).mul(lr).div(60000)
+                    # noise = noise.mul(torch.tensor(2*lr).sqrt()).mul(lr).div(group["train_size"])
                     # p.add_(d_p + noise.div(group['lr']), alpha=-group['lr'])
 
                     # Henripal's KSGLD update style:
-                    p.add_(d_p.div(2) + noise.mul(group['lr']).div(60000), alpha=-group['lr'])
+                    p.add_(d_p.div(2) + noise.mul(group['lr']).div(group["train_size"]), alpha=-group['lr'])
 
                     # print('step: ', state['step'])
                     # print('noise_term variance: ', torch.var(noise))

@@ -1,9 +1,9 @@
 seed: 1
-epoch: 2
+epoch: 10
 block_size: 10
 block_decay: .5
 preconditioner: None
-optimizer: optim.SGD
+optimizer: ksgld.KSGLD
 accept_model: False
 model: resnet.ResNet34
 ekfac.EKFAC:
