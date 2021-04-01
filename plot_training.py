@@ -2,6 +2,7 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 import numpy as np
 import argparse
 import yaml
+import glob
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -14,10 +15,16 @@ parser.add_argument("-y", "--yaml", default=default_yaml,
                     help="yaml config")
 parser.add_argument("-d", "--debug", default=False,
                     help="debug tfevents by showing all available tags")
+parser.add_argument("-min", "--minvalue", default=98.9,
+                    help="minimum y value")
+parser.add_argument("-max", "--maxvalue", default=99.4,
+                    help="maximum y value")
 
 args = parser.parse_args()
 yaml_path = str(args.yaml)
 debug_events = bool(args.debug)
+minvalue = float(args.minvalue)
+maxvalue = float(args.maxvalue)
 
 with open(yaml_path) as f:
     config = yaml.load(f, Loader=yaml.Loader)
@@ -41,7 +48,9 @@ def plot_tensorflow_log():
             data_range = range(cfg_range[0])
 
     for cfg in config["scalar_data"]:
-        event_acc = EventAccumulator(cfg["path"], tf_size_guidance)
+        data_path = glob.glob(cfg["path"])[0]
+        # print(glob.glob(cfg["path"]))
+        event_acc = EventAccumulator(data_path, tf_size_guidance)
         event_acc.Reload()
 
         # Show all tags in the log file
@@ -77,7 +86,7 @@ def plot_tensorflow_log():
 
     plt.xlabel(config["xlabel"])
     plt.ylabel(config["ylabel"])
-    plt.ylim(bottom=98.9, top=99.4)
+    plt.ylim(bottom=minvalue, top=maxvalue)
     plt.legend(loc=config["legend_loc"], frameon=True)
     plt.show()
 

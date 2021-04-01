@@ -7,14 +7,14 @@ scalar_data:
     tag: "Acc/train"
     plot_label: "KSGLD"
     # best acc: 99.33, acc at epoch 10: 99.32
-  - path: "/content/drive/MyDrive/Tesis/langevin/kfac_20210216_024133/events.out.tfevents.1613443297.05aaef52a288.1738.0"
-    tag: "Acc/train"
-    plot_label: "K-FAC"
-    # best acc: 99.31, acc at epoch 10: 99.31
-  - path: "/content/drive/MyDrive/Tesis/langevin/ekfac_20210223_203200/EKFAC_Batch500_Lr5e_3/events.out.tfevents.1614085631.484ca10921db.297.0"
-    tag: "Acc/train"
-    plot_label: "EKFAC"
-    # best acc: 99.33, acc at epoch 10: 99.13
+  # - path: "/content/drive/MyDrive/Tesis/langevin/kfac_20210216_024133/events.out.tfevents.1613443297.05aaef52a288.1738.0"
+  #   tag: "Acc/train"
+  #   plot_label: "K-FAC"
+  #   # best acc: 99.31, acc at epoch 10: 99.31
+  # - path: "/content/drive/MyDrive/Tesis/langevin/ekfac_20210223_203200/EKFAC_Batch500_Lr5e_3/events.out.tfevents.1614085631.484ca10921db.297.0"
+  #   tag: "Acc/train"
+  #   plot_label: "EKFAC"
+  #   # best acc: 99.33, acc at epoch 10: 99.13
   - path: "/content/drive/MyDrive/Tesis/langevin/eksgld_20210221_060026/EKFAC_KSGLD_Batch200_Lr2e_3/events.out.tfevents.1613889704.3e6585d97c0d.891.0"
     tag: "Acc/train"
     plot_label: "EKSGLD"
@@ -23,15 +23,15 @@ scalar_data:
     tag: "Acc/train"
     plot_label: "pSGLD"
     # best acc: 99.28, acc at epoch 10: 99.24
-  # - path: "/content/drive/MyDrive/Tesis/langevin/asgld_20210208_060145/events.out.tfevents.1612767296.7816ab031c57.1138.0"
-  #   tag: "Acc/train"
-  #   plot_label: "ASGLD"
-  #   # best acc: 99.24, acc at epoch 10: 99.24
-  # - path: "/content/drive/MyDrive/Tesis/langevin/sgld3_20210204_001246/events.out.tfevents.1612397571.8bdd6e780295.690.0"
-  #   tag: "Acc/train"
-  #   plot_label: "SGLD"
+  - path: "/content/drive/MyDrive/Tesis/langevin/asgld_20210208_060145/events.out.tfevents.1612767296.7816ab031c57.1138.0"
+    tag: "Acc/train"
+    plot_label: "ASGLD"
+    # best acc: 99.24, acc at epoch 10: 99.24
+  - path: "/content/drive/MyDrive/Tesis/langevin/sgld3_20210204_001246/events.out.tfevents.1612397571.8bdd6e780295.690.0"
+    tag: "Acc/train"
+    plot_label: "SGLD"
 manual_data:
   - data: [94.669,96.802,97.578,98.043,98.362,98.547,98.661,98.737,98.828,98.893]
     plot_label: "RMSprop"
-  # - data: [86.467,93.709,95.424,96.269,96.978,97.393,97.546,97.807,97.848,97.980]
-  #   plot_label: "SGD"
+  - data: [86.467,93.709,95.424,96.269,96.978,97.393,97.546,97.807,97.848,97.980]
+    plot_label: "SGD"
