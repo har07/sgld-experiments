@@ -29,6 +29,7 @@ from os import makedirs
 
 default_yaml =  "config.yaml"
 default_silent = False
+default_none = "None"
 save_model_path = "/content/sgld-experiments"
 session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -42,9 +43,11 @@ parser.add_argument("-s", "--silent",
                     help="if True, do not print per epoch accuracy",
                     default=default_silent)
 parser.add_argument("-l", "--logdir",
-                    help="Log directory")
+                    help="Log directory",
+                    default=default_none)
 parser.add_argument("-c", "--checkpoint",
-                    help="Checkpoint file")
+                    help="Checkpoint file",
+                    default=default_none)
 
 args = parser.parse_args()
 yaml_path = str(args.yaml)
@@ -142,7 +145,7 @@ batch_evaluator = lib.evaluation.BatchEvaluator(test_loader, burn_in=burn_in, th
 # print('burn_in: ', burn_in)
 
 start_epoch = 1
-if checkpoint:
+if checkpoint != default_none:
     chk = torch.load(checkpoint)
     start_epoch = chk['epoch']
     step = chk['step']
