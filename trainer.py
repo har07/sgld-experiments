@@ -41,10 +41,16 @@ parser.add_argument("-y", "--yaml",
 parser.add_argument("-s", "--silent",
                     help="if True, do not print per epoch accuracy",
                     default=default_silent)
+parser.add_argument("-l", "--logdir",
+                    help="Log directory")
+parser.add_argument("-c", "--checkpoint",
+                    help="Checkpoint file")
 
 args = parser.parse_args()
 yaml_path = str(args.yaml)
 silent = bool(args.silent)
+logdir = str(args.logdir)
+checkpoint = str(args.checkpoint)
 
 with open(yaml_path) as f:
     config = yaml.load(f, Loader=yaml.Loader)
@@ -112,7 +118,11 @@ if precond_name != '' and precond_name.lower() != 'none':
     print('preconditioner: ', precond_name)
     print('preconditioner params: ', precond_params)
 
-writer = SummaryWriter()
+if logdir:
+    writer = SummaryWriter(log_dir=logdir)
+else:
+    writer = SummaryWriter()
+
 
 step = 0
 current_lr = optim_params["lr"]
@@ -131,9 +141,17 @@ if 'num_burn_in_steps' in optim_params:
 batch_evaluator = lib.evaluation.BatchEvaluator(test_loader, burn_in=burn_in, thinning=100)
 # print('burn_in: ', burn_in)
 
-state_accum = []
+start_epoch = 1
+if checkpoint:
+    chk = torch.load(checkpoint)
+    start_epoch = chk['epoch']
+    step = chk['step']
+    optimizer.load_state_dict(chk['optimizer_state_dict'])
+    model.load_state_dict(chk['model_state_dict'])
 
-for epoch in range(1, epochs+1):
+# state_accum = []
+
+for epoch in range(start_epoch, epochs+1):
     t0 = time.time()
 
     print('current_lr: ', current_lr)
@@ -204,5 +222,10 @@ for epoch in range(1, epochs+1):
 
 # Save the model weights.
 # torch.save(state_accum, save_model_path + "/" + session_id+".accum.pt")
-torch.save(model.state_dict(), save_model_path + "/" + session_id+".pt")
+torch.save({
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'epoch': epoch,
+        'steps': step
+    }, save_model_path + "/" + session_id+".pt")
 writer.flush()
