@@ -121,7 +121,7 @@ if precond_name != '' and precond_name.lower() != 'none':
     print('preconditioner: ', precond_name)
     print('preconditioner params: ', precond_params)
 
-if logdir:
+if logdir != default_none:
     writer = SummaryWriter(log_dir=logdir)
 else:
     writer = SummaryWriter()
@@ -147,8 +147,8 @@ batch_evaluator = lib.evaluation.BatchEvaluator(test_loader, burn_in=burn_in, th
 start_epoch = 1
 if checkpoint != default_none:
     chk = torch.load(checkpoint)
-    start_epoch = chk['epoch']
-    step = chk['step']
+    start_epoch = chk['epoch'] + 1
+    step = chk['steps']
     optimizer.load_state_dict(chk['optimizer_state_dict'])
     model.load_state_dict(chk['model_state_dict'])
 
