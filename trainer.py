@@ -149,6 +149,7 @@ if checkpoint != default_none:
     chk = torch.load(checkpoint)
     start_epoch = chk['epoch'] + 1
     step = chk['steps']
+    current_lr = chk['lr']
     optimizer.load_state_dict(chk['optimizer_state_dict'])
     model.load_state_dict(chk['model_state_dict'])
 
@@ -229,6 +230,7 @@ torch.save({
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'epoch': epoch,
-        'steps': step
+        'steps': step,
+        'lr': current_lr
     }, save_model_path + "/" + session_id+".pt")
 writer.flush()
