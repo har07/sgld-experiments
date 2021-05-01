@@ -56,7 +56,7 @@ def make_datasets_cifar10(bs=128, test_bs=100):
 
     return train_loader, test_loader
 
-def _get_simultan_subsets_loader(trainset):
+def _get_simultan_subsets_loader(trainset, batch_size):
     excluded = [] 
     for i in range(10):
         choice = list(j for j in range(i*6000+4000,(i+1)*6000))
@@ -77,8 +77,8 @@ def _get_simultan_subsets_loader(trainset):
     trainset_s = torch.utils.data.Subset(trainset, S)
     trainset_s2 = torch.utils.data.Subset(trainset, S2)
 
-    train_loader_s = torch.utils.data.DataLoader(trainset_s, batch_size=bs, shuffle=False)
-    train_loader_s2 = torch.utils.data.DataLoader(trainset_s2, batch_size=bs, shuffle=False)
+    train_loader_s = torch.utils.data.DataLoader(trainset_s, batch_size=batch_size, shuffle=False)
+    train_loader_s2 = torch.utils.data.DataLoader(trainset_s2, batch_size=batch_size, shuffle=False)
 
     return train_loader_s, train_loader_s2
 
@@ -87,7 +87,7 @@ def make_simultan(bs=50, test_bs=4096, noise=0):
                             transform=transforms.Compose([NoiseTransform(0), transforms.ToTensor()])
                         )
 
-    train_loader_s, train_loader_s2 = _get_simultan_subsets_loader(trainset)
+    train_loader_s, train_loader_s2 = _get_simultan_subsets_loader(trainset, bs)
 
     test_loader = torch.utils.data.DataLoader(
         datasets.MNIST('data',
@@ -112,7 +112,7 @@ def make_simultan_cifar10(bs=128, test_bs=100):
     ])
 
     trainset = datasets.CIFAR10('data', train=True, download=True, transform=transform_train)
-    train_loader_s, train_loader_s2 = _get_simultan_subsets_loader(trainset)
+    train_loader_s, train_loader_s2 = _get_simultan_subsets_loader(trainset, bs)
 
     test_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10('data', train=False, transform=transform_test),
