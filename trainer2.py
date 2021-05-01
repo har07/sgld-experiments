@@ -108,11 +108,11 @@ if optimizer_name in config:
 print('optimizer: ', optimizer_name)
 print('optimizer params: ', optim_params)
 if config['accept_model']:
-    optimizer1 = eval(optimizer_name)(model, **optim_params)
-    optimizer2 = eval(optimizer_name)(model, **optim_params)
+    optimizer1 = eval(optimizer_name)(model1, **optim_params)
+    optimizer2 = eval(optimizer_name)(model2, **optim_params)
 else:
-    optimizer1 = eval(optimizer_name)(model.parameters(), **optim_params)
-    optimizer2 = eval(optimizer_name)(model.parameters(), **optim_params)
+    optimizer1 = eval(optimizer_name)(model1.parameters(), **optim_params)
+    optimizer2 = eval(optimizer_name)(model2.parameters(), **optim_params)
 
 precond_params = {}
 precond1 = None
@@ -124,8 +124,8 @@ if precond_name in config:
         if v or v == False:
             precond_params[k] = v
 if precond_name != '' and precond_name.lower() != 'none':
-    precond1 = eval(precond_name)(model, **precond_params)
-    precond2 = eval(precond_name)(model, **precond_params)
+    precond1 = eval(precond_name)(model1, **precond_params)
+    precond2 = eval(precond_name)(model2, **precond_params)
     print('preconditioner: ', precond_name)
     print('preconditioner params: ', precond_params)
 
