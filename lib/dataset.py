@@ -76,8 +76,8 @@ def _get_simultan_subsets_loader(trainset, batch_size):
                 excluded2.append(candidate)
                 break
 
-    S = list(x for x in range(0,60000) if x not in excluded)
-    S2 = list(x for x in range(0,60000) if x not in excluded2)
+    S = list(x for x in range(0,10*n_per_class) if x not in excluded)
+    S2 = list(x for x in range(0,10*n_per_class) if x not in excluded2)
 
     trainset_s = torch.utils.data.Subset(trainset, S)
     trainset_s2 = torch.utils.data.Subset(trainset, S2)
