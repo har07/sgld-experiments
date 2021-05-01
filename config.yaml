@@ -1,6 +1,6 @@
 seed: 1
 epoch: 10
-block_size: 10
+block_size: 20
 block_decay: .5
 preconditioner: None
 optimizer: sgld3.SGLD
@@ -62,8 +62,8 @@ sgld2.SGLD:
   lr: 0.5
   num_burn_in_steps: 300
 sgld3.SGLD:
-  lr: .1
-  train_size: 60000
+  lr: .2
+  train_size: 50000
   lr_decay: 2.e-2
   weight_decay: 0.
   num_burn_in_steps: 300
@@ -75,7 +75,7 @@ psgld.pSGLD:
   num_burn_in_steps: 300
 psgld2.pSGLD:
   lr: 1.e-3
-  train_size: 60000
+  train_size: 50000
   alpha: .95
   eps: 5.e-5
   num_burn_in_steps: 300
@@ -83,7 +83,7 @@ psgld2.pSGLD:
   addnoise: True
 psgld3.pSGLD:
   lr: 1.e-3
-  train_size: 60000
+  train_size: 50000
   lr_decay: 0.
   weight_decay: 0.
   num_burn_in_steps: 300
