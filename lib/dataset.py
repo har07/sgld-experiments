@@ -1,4 +1,5 @@
 import torch.utils
+import random
 from torchvision import datasets, transforms
 from .preproc import NoiseTransform
 
@@ -54,3 +55,67 @@ def make_datasets_cifar10(bs=128, test_bs=100):
     #        'dog', 'frog', 'horse', 'ship', 'truck')
 
     return train_loader, test_loader
+
+def _get_simultan_subsets_loader(trainset):
+    excluded = [] 
+    for i in range(10):
+        choice = list(j for j in range(i*6000+4000,(i+1)*6000))
+        excluded.append(random.choice(choice))
+
+    excluded2 = []
+    for i in range(10):
+        choice = list(j for j in range(i*6000+4000,(i+1)*6000))
+        while True:
+            candidate = random.choice(choice)
+            if candidate not in excluded:
+                excluded2.append(candidate)
+                break
+
+    S = (x for x in range(0,60000) if x not in excluded)
+    S2 = (x for x in range(0,60000) if x not in excluded2)
+
+    trainset_s = torch.utils.data.Subset(trainset, S)
+    trainset_s2 = torch.utils.data.Subset(trainset, S2)
+
+    train_loader_s = torch.utils.data.DataLoader(trainset_s, batch_size=bs, shuffle=False)
+    train_loader_s2 = torch.utils.data.DataLoader(trainset_s2, batch_size=bs, shuffle=False)
+
+    return train_loader_s, train_loader_s2
+
+def make_simultan(bs=50, test_bs=4096, noise=0):
+    trainset = datasets.MNIST('mnist_data', train=True, download=True,
+                            transform=transforms.Compose([NoiseTransform(0), transforms.ToTensor()])
+                        )
+
+    train_loader_s, train_loader_s2 = _get_simultan_subsets_loader(trainset)
+
+    test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST('data',
+            train=False,
+            transform=transforms.Compose([NoiseTransform(noise),
+                                        transforms.ToTensor()])),
+        batch_size=test_bs)
+
+    return train_loader_s, train_loader_s2, test_loader
+
+def make_simultan_cifar10(bs=128, test_bs=100):
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ])
+
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ])
+
+    trainset = datasets.CIFAR10('data', train=True, download=True, transform=transform_train)
+    train_loader_s, train_loader_s2 = _get_simultan_subsets_loader(trainset)
+
+    test_loader = torch.utils.data.DataLoader(
+        datasets.CIFAR10('data', train=False, transform=transform_test),
+        batch_size=test_bs, shuffle=False, num_workers=2)
+
+    return train_loader_s, train_loader_s2, test_loader
