@@ -92,7 +92,7 @@ else:
     model_name = config['model']
     model2 = eval(model_name)()
     model1 = eval(model_name)()
-    train_loader1, train_loader2, test_loader = lib.dataset.make_simultan_cifar10()(bs=train_batch, test_bs=test_batch)
+    train_loader1, train_loader2, test_loader = lib.dataset.make_simultan_cifar10(bs=train_batch, test_bs=test_batch)
     
 model1 = model1.cuda()
 model2 = model2.cuda()
