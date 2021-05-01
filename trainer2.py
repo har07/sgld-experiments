@@ -197,8 +197,8 @@ for epoch in range(start_epoch, epochs+1):
         target = target.cuda()
         optimizer2.zero_grad()
         output = model2(data)
-        loss1 = F.nll_loss(output, target)
-        loss1.backward()
+        loss2 = F.nll_loss(output, target)
+        loss2.backward()
         if precond2:
             precond2.step()
         if block_size > 0 and block_decay > 0 and lr_param:
