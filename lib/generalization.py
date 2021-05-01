@@ -1,5 +1,9 @@
 import torch
 
+"""
+Contains code for stability and generalization study
+"""
+
 def ned_torch(x1: torch.Tensor, x2: torch.Tensor, dim=1, eps=1e-8) -> torch.Tensor:
     """
     Normalized eucledian distance in pytorch.

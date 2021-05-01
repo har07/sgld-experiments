@@ -16,7 +16,7 @@ import lib.ksgld as ksgld
 import lib.eksgld as eksgld
 import lib.lr_setter as lr_setter
 import lib.sampling as sampling
-import lib.generalization_study.measure_diff as measure_diff
+import lib.generalization as generalization
 import model.resnet as resnet
 import model.densenet as densenet
 import argparse
@@ -218,7 +218,7 @@ for epoch in range(start_epoch, epochs+1):
             optimizer2 = lr_setter.update_lr(optimizer2, current_lr)
 
     # validate
-    writer.add_scalar("NED", measure_diff(model1, model2), epoch)
+    writer.add_scalar("NED", generalization.measure_diff(model1, model2), epoch)
     val_accuracy1, _ = lib.evaluation.evaluate(model1, test_loader)
     writer.add_scalar("S: Loss/train", np.mean(loss1.item()), epoch)
     writer.add_scalar("S: Acc/train", val_accuracy1, epoch)
