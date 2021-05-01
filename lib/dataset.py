@@ -57,14 +57,19 @@ def make_datasets_cifar10(bs=128, test_bs=100):
     return train_loader, test_loader
 
 def _get_simultan_subsets_loader(trainset, batch_size):
+    n_per_class = 6000
+    skip = 4000
+    if isinstance(trainset, datasets.CIFAR10):
+        n_per_class = 5000
+
     excluded = [] 
     for i in range(10):
-        choice = list(j for j in range(i*6000+4000,(i+1)*6000))
+        choice = list(j for j in range(i*n_per_class+skip,(i+1)*n_per_class))
         excluded.append(random.choice(choice))
 
     excluded2 = []
     for i in range(10):
-        choice = list(j for j in range(i*6000+4000,(i+1)*6000))
+        choice = list(j for j in range(i*n_per_class+skip,(i+1)*n_per_class))
         while True:
             candidate = random.choice(choice)
             if candidate not in excluded:
