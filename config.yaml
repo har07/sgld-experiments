@@ -1,11 +1,11 @@
 seed: 1
-epoch: 10
+epoch: 15
 block_size: 20
 block_decay: .5
 preconditioner: None
 optimizer: sgld3.SGLD
 accept_model: False
-model: resnet.ResNet34
+model: noop
 ekfac.EKFAC:
   eps: 1.e-3
   sua: False
@@ -63,7 +63,7 @@ sgld2.SGLD:
   num_burn_in_steps: 300
 sgld3.SGLD:
   lr: .2
-  train_size: 50000
+  train_size: 60000
   lr_decay: 2.e-2
   weight_decay: 0.
   num_burn_in_steps: 300
@@ -96,7 +96,7 @@ asgld.ASGLD:
   eps: 1.e-6
   noise: 1.e-2
 dataset:
-  name: CIFAR10
+  name: MNIST
   train_batch: 200
   test_batch: 200
 percentage_tosample: .1

@@ -12,7 +12,7 @@ urllib.request.install_opener(opener)
 
 def make_datasets(bs=50, test_bs=4096, noise=0):
     train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('data',
+        datasets.MNIST('mnist_data',
             train=True,
             download=True,
             transform=transforms.Compose([NoiseTransform(noise),
@@ -21,7 +21,7 @@ def make_datasets(bs=50, test_bs=4096, noise=0):
         shuffle=False)
 
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('data',
+        datasets.MNIST('mnist_data',
             train=False,
             transform=transforms.Compose([NoiseTransform(noise),
                                         transforms.ToTensor()])),
@@ -95,7 +95,7 @@ def make_simultan(bs=50, test_bs=4096, noise=0):
     train_loader_s, train_loader_s2 = _get_simultan_subsets_loader(trainset, bs)
 
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('data',
+        datasets.MNIST('mnist_data',
             train=False,
             transform=transforms.Compose([NoiseTransform(noise),
                                         transforms.ToTensor()])),
