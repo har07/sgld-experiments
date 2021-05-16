@@ -1,11 +1,11 @@
 seed: 1
-epoch: 15
+epoch: 50
 block_size: 20
 block_decay: .5
 preconditioner: None
-optimizer: sgld3.SGLD
+optimizer: asgld.ASGLD
 accept_model: False
-model: noop
+model: resnet.ResNet34
 ekfac.EKFAC:
   eps: 1.e-3
   sua: False
@@ -51,16 +51,6 @@ pysgmcmc_sgld.SGLD:
   precondition_decay_rate: .95 # Exponential decay rate of the rescaling of the preconditioner (RMSprop)
   num_burn_in_steps: 10
   diagonal_bias: 1.e-8
-sgld.SGLD:
-  lr: 0.0005005742963403476 # for vanilla SGLD
-  # lr: 99.e-2 # for pSGLD
-  precondition_decay_rate: .95 # Exponential decay rate of the rescaling of the preconditioner (RMSprop)
-  num_burn_in_steps: 610
-  diagonal_bias: 1.e-8
-  vanilla: True
-sgld2.SGLD:
-  lr: 0.5
-  num_burn_in_steps: 300
 sgld3.SGLD:
   lr: .2
   train_size: 60000
@@ -102,3 +92,6 @@ dataset:
 percentage_tosample: .1
 step_samples: 10
 step_save_state: 100
+# notes:
+# train size CIFAR10: 50k
+# train size MNIST: 60k
