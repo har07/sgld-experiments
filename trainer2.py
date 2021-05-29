@@ -162,6 +162,8 @@ if checkpoint != default_none:
     model1.load_state_dict(chk['model1_state_dict'])
     optimizer2.load_state_dict(chk['optimizer2_state_dict'])
     model2.load_state_dict(chk['model2_state_dict'])
+    del chk  # dereference seems crucial
+    torch.cuda.empty_cache()
 
 # state_accum = []
 

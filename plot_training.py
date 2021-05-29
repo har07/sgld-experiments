@@ -70,19 +70,20 @@ def plot_tensorflow_log():
 
         plt.plot(x[:],y[:], label=cfg["plot_label"])
 
-    for cfg in config["manual_data"]:
-        events = cfg["data"]
-        steps = len(events)
-        if not has_range:
-            x = np.arange(steps)
-        else:
-            x = data_range
-        y = np.zeros(len(x))
+    if "manual_data" in config:
+        for cfg in config["manual_data"]:
+            events = cfg["data"]
+            steps = len(events)
+            if not has_range:
+                x = np.arange(steps)
+            else:
+                x = data_range
+            y = np.zeros(len(x))
 
-        for i in range(len(x)):
-            y[i] = events[i]
+            for i in range(len(x)):
+                y[i] = events[i]
 
-        plt.plot(x[:],y[:], label=cfg["plot_label"])
+            plt.plot(x[:],y[:], label=cfg["plot_label"])
 
     plt.xlabel(config["xlabel"])
     plt.ylabel(config["ylabel"])

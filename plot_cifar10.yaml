@@ -1,4 +1,4 @@
-legend_loc: "lower right"
+legend_loc: "center right"
 ylabel: accuracy
 xlabel: epoch
 xrange: [0,10]
@@ -22,12 +22,12 @@ scalar_data:
   - path: "/content/drive/MyDrive/Tesis/langevin/cifar_20210328_201000/runs/SGLD10/*.0"
     tag: "Acc/train"
     plot_label: "SGLD"
-  - path: "/content/drive/MyDrive/Tesis/langevin/cifar_20210328_201000/runs/RMSProp10/*.0"
-    tag: "Acc/train"
-    plot_label: "RMSProp"
+  # - path: "/content/drive/MyDrive/Tesis/langevin/cifar_20210328_201000/runs/RMSProp10/*.0"
+  #   tag: "Acc/train"
+  #   plot_label: "RMSProp"
   - path: "/content/drive/MyDrive/Tesis/langevin/cifar_20210328_201000/runs/SGD10/*.0"
     tag: "Acc/train"
     plot_label: "SGD"
-manual_data:
-  - data: [0,0,0,0,0,0,0,0,0,0]
-    plot_label: "."
+# manual_data:
+#   - data: [0,0,0,0,0,0,0,0,0,0]
+#     plot_label: "."
