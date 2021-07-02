@@ -3,6 +3,10 @@ ylabel: accuracy
 xlabel: epoch
 xrange: [0,10]
 scalar_data:
+  - path: "/content/drive/MyDrive/Tesis/langevin/eksgld_20210221_060026/EKFAC_KSGLD_Batch200_Lr2e_3/events.out.tfevents.1613889704.3e6585d97c0d.891.0"
+    tag: "Acc/train"
+    plot_label: "EKSGLD"
+    # best acc: 99.33, acc at epoch 10: 99.33
   - path: "/content/drive/MyDrive/Tesis/langevin/ksgld_20210216_100915/events.out.tfevents.1613470159.05aaef52a288.8540.0"
     tag: "Acc/train"
     plot_label: "KSGLD"
@@ -15,10 +19,6 @@ scalar_data:
   #   tag: "Acc/train"
   #   plot_label: "EKFAC"
   #   # best acc: 99.33, acc at epoch 10: 99.13
-  - path: "/content/drive/MyDrive/Tesis/langevin/eksgld_20210221_060026/EKFAC_KSGLD_Batch200_Lr2e_3/events.out.tfevents.1613889704.3e6585d97c0d.891.0"
-    tag: "Acc/train"
-    plot_label: "EKSGLD"
-    # best acc: 99.33, acc at epoch 10: 99.33
   - path: "/content/drive/MyDrive/Tesis/langevin/psgld_20210208_074428/events.out.tfevents.1612774082.7816ab031c57.2569.0"
     tag: "Acc/train"
     plot_label: "pSGLD"

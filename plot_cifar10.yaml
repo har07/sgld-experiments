@@ -3,14 +3,14 @@ ylabel: accuracy
 xlabel: epoch
 xrange: [0,10]
 scalar_data:
-  - path: "/content/drive/MyDrive/Tesis/langevin/cifar_20210328_201000/runs/KSGLD10/*.0"
-    tag: "Acc/train"
-    plot_label: "KSGLD"
-    # best acc: 99.33, acc at epoch 10: 99.32
   - path: "/content/drive/MyDrive/Tesis/langevin/cifar_20210328_201000/runs/EKSGLD10/*.0"
     tag: "Acc/train"
     plot_label: "EKSGLD"
     # best acc: 99.33, acc at epoch 10: 99.33
+  - path: "/content/drive/MyDrive/Tesis/langevin/cifar_20210328_201000/runs/KSGLD10/*.0"
+    tag: "Acc/train"
+    plot_label: "KSGLD"
+    # best acc: 99.33, acc at epoch 10: 99.32
   - path: "/content/drive/MyDrive/Tesis/langevin/cifar_20210328_201000/runs/pSGLD10/*.0"
     tag: "Acc/train"
     plot_label: "pSGLD"

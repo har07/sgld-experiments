@@ -68,7 +68,10 @@ def plot_tensorflow_log():
         for i in range(len(x)):
             y[i] = events[i][2]
 
-        plt.plot(x[:],y[:], label=cfg["plot_label"])
+        if cfg["plot_label"] != "EKSGLD":
+            plt.plot(x[:],y[:], label=cfg["plot_label"], linestyle=':')
+        else:
+            plt.plot(x[:],y[:], label=cfg["plot_label"])
 
     if "manual_data" in config:
         for cfg in config["manual_data"]:
@@ -83,7 +86,10 @@ def plot_tensorflow_log():
             for i in range(len(x)):
                 y[i] = events[i]
 
-            plt.plot(x[:],y[:], label=cfg["plot_label"])
+            if cfg["plot_label"] != "EKSGLD":
+                plt.plot(x[:],y[:], label=cfg["plot_label"], linestyle=':')
+            else:
+                plt.plot(x[:],y[:], label=cfg["plot_label"])
 
     plt.xlabel(config["xlabel"])
     plt.ylabel(config["ylabel"])
