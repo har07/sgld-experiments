@@ -2,6 +2,13 @@ import torch
 import torch.nn.functional as F
 from lib.dataset import ToyDataset
 from lib.model import ToyNet
+import lib.psgld2 as psgld2
+import lib.sgld3 as sgld3
+import lib.ekfac_precond as ekfac
+import lib.kfac_precond as kfac
+import lib.asgld as asgld
+import lib.ksgld as ksgld
+import lib.eksgld as eksgld
 import argparse
 import numpy as np
 import yaml
@@ -11,6 +18,7 @@ import inspect
 
 from torch.utils.tensorboard import SummaryWriter
 
+dataset_dir = "./dataset"
 default_yaml =  "config_prob_distrib.yaml"
 default_silent = False
 default_none = "None"
@@ -54,10 +62,9 @@ precond_name = config['preconditioner']
 
 batch_size = 32
 
-# TODO: construct model_id based on config
-model_id = ''
+model_id = optimizer_name + '-1'
 model = ToyNet(model_id, project_dir=project_dir).cuda()
-train_dataset = ToyDataset()
+train_dataset = ToyDataset(dataset_dir)
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 
 num_train_batches = int(len(train_dataset)/batch_size)
@@ -83,8 +90,7 @@ step_args = inspect.signature(optimizer.step)
 lr_param = 'lr' in step_args.parameters
 
 precond_params = {}
-precond1 = None
-precond2 = None
+precond = None
 if precond_name in config:
     precond_params2 = config[precond_name]
     for k in precond_params2:
