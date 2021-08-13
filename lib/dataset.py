@@ -2,6 +2,8 @@ import torch.utils
 import random
 from torchvision import datasets, transforms
 from .preproc import NoiseTransform
+import pickle
+import numpy as np
 
 # workaround for MNIST download problem: https://github.com/pytorch/vision/issues/1938#issuecomment-789986996
 from six.moves import urllib
@@ -124,3 +126,61 @@ def make_simultan_cifar10(bs=128, test_bs=100):
         batch_size=test_bs, shuffle=False, num_workers=2)
 
     return train_loader_s, train_loader_s2, test_loader
+
+# this class is taken from: https://github.com/fregu856/evaluating_bdl/blob/master/toyClassification/SGLD-64/dataset.py
+class ToyDataset(torch.utils.data.Dataset):
+    def __init__(self, base_dir):
+        self.examples = []
+
+        with open(base_dir + "/x.pkl", "rb") as file: # (needed for python3)
+            x = pickle.load(file) # (shape: (2000, 2))
+
+        with open(base_dir + "/y.pkl", "rb") as file: # (needed for python3)
+            y = pickle.load(file) #  (shape: (2000, ))
+
+        x_1_train = []
+        x_2_train = []
+        y_train = []
+        for i in range(x.shape[0]):
+            if x[i, 0] > 0:
+                x_1_train.append(x[i, 0])
+                x_2_train.append(x[i, 1])
+                y_train.append(y[i])
+
+        y_train = np.array(y_train)
+        x_train = np.zeros((len(y_train), 2), dtype=np.float32)
+        x_train[:, 0] = np.array(x_1_train)
+        x_train[:, 1] = np.array(x_2_train)
+
+        x_train_false = x_train[y_train == 0] # (shape: (num_false, 2))
+        x_train_true = x_train[y_train == 1] # (shape: (num_true, 2))
+        # print ("num_false: %d" % x_train_false.shape[0])
+        # print ("num_true: %d" % x_train_true.shape[0])
+        # plt.figure(1)
+        # plt.plot(x_train_false[:, 0], x_train_false[:, 1], "r.")
+        # plt.plot(x_train_true[:, 0], x_train_true[:, 1], "b.")
+        # plt.ylabel("x_2")
+        # plt.xlabel("x_1")
+        # plt.xlim([-3, 3])
+        # plt.ylim([-3, 3])
+        # plt.savefig(base_dir + "/evaluating_bdl/toyClassification/SGLD-64/training_data.png")
+        # plt.close(1)
+
+        for i in range(x_train.shape[0]):
+            example = {}
+            example["x"] = x_train[i]
+            example["y"] = y_train[i]
+            self.examples.append(example)
+
+        self.num_examples = len(self.examples)
+
+    def __getitem__(self, index):
+        example = self.examples[index]
+
+        x = example["x"]
+        y = example["y"]
+
+        return (x, y)
+
+    def __len__(self):
+        return self.num_examples
