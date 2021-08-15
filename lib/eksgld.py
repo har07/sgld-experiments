@@ -360,7 +360,8 @@ class EKSGLD(Optimizer):
             ones = torch.ones_like(x[:1])
             x = torch.cat([x, ones], dim=0)
         xxt = torch.mm(x, x.t()) / float(x.shape[1])
-        Ex, state['kfe_x'] = torch.symeig(xxt, eigenvectors=True)
+        # Ex, state['kfe_x'] = torch.symeig(xxt, eigenvectors=True)
+        Ex, state['kfe_x'] = torch.linalg.eigh(xxt, UPLO='U')
         # Computation of ggt
         if group['layer_type'] == 'Conv2d':
             gy = gy.data.permute(1, 0, 2, 3)
@@ -370,7 +371,8 @@ class EKSGLD(Optimizer):
             gy = gy.data.t()
             state['num_locations'] = 1
         ggt = torch.mm(gy, gy.t()) / float(gy.shape[1])
-        Eg, state['kfe_gy'] = torch.symeig(ggt, eigenvectors=True)
+        # Eg, state['kfe_gy'] = torch.symeig(ggt, eigenvectors=True)
+        Eg, state['kfe_gy'] = torch.linalg.eigh(ggt, UPLO='U')
         state['m2'] = Eg.unsqueeze(1) * Ex.unsqueeze(0) * state['num_locations']
         if group['layer_type'] == 'Conv2d' and self.sua:
             ws = group['params'][0].grad.data.size()
