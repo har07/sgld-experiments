@@ -4,6 +4,7 @@ from torchvision import datasets, transforms
 from .preproc import NoiseTransform
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
 
 # workaround for MNIST download problem: https://github.com/pytorch/vision/issues/1938#issuecomment-789986996
 from six.moves import urllib
@@ -163,7 +164,7 @@ class ToyDataset(torch.utils.data.Dataset):
         # plt.xlabel("x_1")
         # plt.xlim([-3, 3])
         # plt.ylim([-3, 3])
-        # plt.savefig(base_dir + "/evaluating_bdl/toyClassification/SGLD-64/training_data.png")
+        # plt.savefig("/content/sgld-experiments/training_data.png")
         # plt.close(1)
 
         for i in range(x_train.shape[0]):
