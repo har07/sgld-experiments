@@ -21,6 +21,9 @@ import inspect
 
 from torch.utils.tensorboard import SummaryWriter
 
+# example command to run:
+# !python train_prob_distrib.py -p /content/sgld-experiments
+
 dataset_dir = "./dataset"
 default_yaml =  "config_prob_distrib.yaml"
 default_silent = False
@@ -158,7 +161,7 @@ for i in range(M):
 
         # save the model weights to disk:
         # only save last 75% of the epoch:
-        if epoch >= num_epochs_low:
+        if epoch+1 >= num_epochs_low:
             checkpoint_path = model.checkpoints_dir + "/model_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
             torch.save(model.state_dict(), checkpoint_path)
 

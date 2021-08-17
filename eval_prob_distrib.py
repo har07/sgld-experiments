@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import argparse
 
 # example command to run:
-# !python eval_prob_distrib.py -b /content/sgld-experiments -id pSGLD-1600 -n 6
+# !python eval_prob_distrib.py -b /content/sgld-experiments -id pSGLD-1600 -e 1600 -n 6
 
 parser = argparse.ArgumentParser(
                     description="Evaluate probability distribution plots "
@@ -35,7 +35,7 @@ num_epochs = int(args.epoch)
 n_models = int(args.n_models)
 
 num_epochs_low = int(0.75*num_epochs)
-print (num_epochs_low)
+# print (num_epochs_low)
 
 x_min = -6.0
 x_max = 6.0
@@ -45,17 +45,17 @@ num_points = 60
 M_values = [1, 4, 16, 64]
 for M in M_values:
     for iter in range(n_models):
-        print(M)
+        # print(M)
 
         if M > 1:
             step_size = float(num_epochs - num_epochs_low)/float(M-1)
         else:
             step_size = 0
-        print(step_size)
+        # print(step_size)
 
         networks = []
         for i in range(M):
-            print (int(num_epochs - i*step_size))
+            # print (int(num_epochs - i*step_size))
 
             network = ToyNet(f"eval_{model_id}-{num_epochs}_1-{n_models}", project_dir=base_dir).cuda()
             step = str(int(num_epochs - i*step_size))
@@ -64,7 +64,7 @@ for M in M_values:
             networks.append(network)
 
         M_float = float(len(networks))
-        print (M_float)
+        # print (M_float)
 
         for network in networks:
             network.eval()

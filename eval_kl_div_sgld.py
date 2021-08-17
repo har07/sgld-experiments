@@ -21,7 +21,7 @@ num_points = 60
 epsilon = 1.0e-30
 
 # example command to run:
-# !python eval_kl_div_sgld.py -b /content/sgld-experiments -id eksgld.EKSGLD -n 64
+# !python eval_kl_div_sgld.py -b /content/sgld-experiments -id ASGLD-1600 -e 1600 -n 6
 
 parser = argparse.ArgumentParser(
                     description="Evaluate probability distribution plots "
@@ -32,11 +32,14 @@ parser.add_argument("-id", "--model_id",
                     help="model id to identify checkpoint directory path")
 parser.add_argument("-e", "--num_epochs",
                     help="number of epoch")
+parser.add_argument("-n", "--n_models",
+                    help="number of models trained")
 
 args = parser.parse_args()
 base_dir = str(args.base_dir)
 model_id = str(args.model_id)
 num_epochs = int(args.num_epochs)
+n_models = int(args.n_models)
 
 with open(f"{base_dir}/dataset/HMC/false_prob_values.pkl", "rb") as file: # (needed for python3)
     false_prob_values_HMC = pickle.load(file) # (shape: (60, 60))
@@ -48,7 +51,7 @@ with open(f"{base_dir}/dataset/HMC/false_prob_values.pkl", "rb") as file: # (nee
 # num_epochs = L*150
 
 num_epochs_low = int(0.75*num_epochs)
-print (num_epochs_low)
+# print (num_epochs_low)
 
 p_HMC = false_prob_values_HMC/np.sum(false_prob_values_HMC)
 
@@ -96,13 +99,13 @@ for M in M_values:
 
     KL_p_HMC_q_total_values = []
     KL_p_HMC_q_train_values = []
-    for j in range(1):
+    for j in range(n_models):
         networks = []
         for i in range(M):
             #print (int(num_epochs - i*step_size))
 
-            network = ToyNet("eval_kldiv_SGLD-64_1", project_dir=base_dir).cuda()
-            checkpoint_path = base_dir + f"/training_logs/model_{model_id}-1/checkpoints/model_{model_id}_epoch_{int(num_epochs - i*step_size)}.pth"
+            network = ToyNet(f"eval_kldiv_{model_id}_1-{n_models}", project_dir=base_dir).cuda()
+            checkpoint_path = base_dir + f"/training_logs/model_{model_id}_{j+1}/checkpoints/model_{model_id}_{j+1}_epoch_{int(num_epochs - i*step_size)}.pth"
             network.load_state_dict(torch.load(checkpoint_path))
             networks.append(network)
 
