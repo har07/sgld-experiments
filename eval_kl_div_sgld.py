@@ -1,4 +1,4 @@
-# adapted from: https://github.com/fregu856/evaluating_bdl/blob/master/toyClassification/Ensemble-MAP-Adam/eval_kl_div.py
+# adapted from: https://github.com/fregu856/evaluating_bdl/blob/master/toyClassification/SGLD-64/eval_kl_div.py
 
 from lib.model import ToyNet
 
@@ -21,28 +21,34 @@ num_points = 60
 epsilon = 1.0e-30
 
 # example command to run:
-# !python eval_kl_div_ensemble.py -b /content/sgld-experiments -id Ensemble-MAP-Adam_1_M64 -n 64
+# !python eval_kl_div_sgld.py -b /content/sgld-experiments -id eksgld.EKSGLD -n 64
 
 parser = argparse.ArgumentParser(
                     description="Evaluate probability distribution plots "
-                                "From model trained using enemble.")
+                                "From model trained using SGLD.")
 parser.add_argument("-b", "--base_dir",
                     help="base directory of the project")
 parser.add_argument("-id", "--model_id",
                     help="model id to identify checkpoint directory path")
-parser.add_argument("-n", "--n_ensemble",
-                    help="number of models trained")
+parser.add_argument("-e", "--num_epochs",
+                    help="number of epoch")
 
 args = parser.parse_args()
 base_dir = str(args.base_dir)
 model_id = str(args.model_id)
-n_ensemble = int(args.n_ensemble)
+num_epochs = int(args.num_epochs)
 
 with open(f"{base_dir}/dataset/HMC/false_prob_values.pkl", "rb") as file: # (needed for python3)
     false_prob_values_HMC = pickle.load(file) # (shape: (60, 60))
 # print (false_prob_values_HMC.shape)
 # print (np.max(false_prob_values_HMC))
 # print (np.min(false_prob_values_HMC))
+
+# L = 64
+# num_epochs = L*150
+
+num_epochs_low = int(0.75*num_epochs)
+print (num_epochs_low)
 
 p_HMC = false_prob_values_HMC/np.sum(false_prob_values_HMC)
 
@@ -77,26 +83,26 @@ p_HMC_train = p_HMC_train/np.sum(p_HMC_train)
 
 writer = SummaryWriter()
 
-# M_values = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
-M_values = [1, 2, 4, 8, 16, 32]
+# M_values = [2, 4, 8, 16, 32, 64, 128, 256, 512]
+M_values = [2, 4, 8, 16, 32, 64]
 for M in M_values:
     # print (M)
 
-    L = int(n_ensemble/M)
-    if L > 20:
-        L = 20
-    # print (L)
+    step_size = float(num_epochs - num_epochs_low)/float(M-1)
+    # print (step_size)
+
+    if (step_size < 1):
+        break
 
     KL_p_HMC_q_total_values = []
     KL_p_HMC_q_train_values = []
-    for l in range(L):
+    for j in range(1):
         networks = []
         for i in range(M):
-            if (l*M + i) % 100 == 0:
-                print (l*M + i)
+            #print (int(num_epochs - i*step_size))
 
-            network = ToyNet(f"eval_kldiv_Ensemble-MAP-Adam_1_M{n_ensemble}", project_dir=base_dir).cuda()
-            checkpoint_path = base_dir + f"/training_logs/model_{model_id}_{l*M + i}/checkpoints/model_{model_id}_epoch_150.pth"
+            network = ToyNet("eval_kldiv_SGLD-64_1", project_dir=base_dir).cuda()
+            checkpoint_path = base_dir + f"/training_logs/model_{model_id}-1/checkpoints/model_{model_id}_epoch_{int(num_epochs - i*step_size)}.pth"
             network.load_state_dict(torch.load(checkpoint_path))
             networks.append(network)
 
