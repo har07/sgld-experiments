@@ -1,7 +1,10 @@
+# adapted from: https://github.com/fregu856/evaluating_bdl/blob/master/toyClassification/SGLD-64/train.py
+
 import torch
 import torch.nn.functional as F
 from lib.dataset import ToyDataset
 from lib.model import ToyNet
+import lib.lr_setter as lr_setter
 import lib.psgld2 as psgld2
 import lib.sgld3 as sgld3
 import lib.ekfac_precond as ekfac
@@ -54,6 +57,7 @@ with open(yaml_path) as f:
     config = yaml.load(f, Loader=yaml.Loader)
 
 seed = config['seed']
+M = config['M']
 epochs = config['epoch']
 block_size = config['block_size']
 block_decay = config['block_decay']
@@ -61,14 +65,7 @@ optimizer_name = config['optimizer']
 precond_name = config['preconditioner']
 
 batch_size = 32
-
-model_id = optimizer_name + '-1'
-model = ToyNet(model_id, project_dir=project_dir).cuda()
-train_dataset = ToyDataset(dataset_dir)
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-
-num_train_batches = int(len(train_dataset)/batch_size)
-num_steps = epochs*num_train_batches + 1
+optimizer_id = optimizer_name.split('.')[1]
 
 optim_params = {}
 if optimizer_name in config:
@@ -78,17 +75,6 @@ if optimizer_name in config:
         if v or v == False:
             optim_params[k] = v
 
-print('optimizer: ', optimizer_name)
-print('optimizer params: ', optim_params)
-if config['accept_model']:
-    optimizer = eval(optimizer_name)(model, **optim_params)
-else:
-    optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
-
-# check if optimizer.step has 'lr' param
-step_args = inspect.signature(optimizer.step)
-lr_param = 'lr' in step_args.parameters
-
 precond_params = {}
 precond = None
 if precond_name in config:
@@ -97,53 +83,83 @@ if precond_name in config:
         v = precond_params2[k]
         if v or v == False:
             precond_params[k] = v
-if precond_name != '' and precond_name.lower() != 'none':
-    precond = eval(precond_name)(model, **precond_params)
-    print('preconditioner: ', precond_name)
-    print('preconditioner params: ', precond_params)
 
 if logdir != default_none:
     writer = SummaryWriter(log_dir=logdir)
 else:
     writer = SummaryWriter()
 
-step = 0
-current_lr = optim_params["lr"]
+for i in range(M):
+    model_id = f"{optimizer_id}-{epochs}_{i+1}"
+    model = ToyNet(model_id, project_dir=project_dir).cuda()
+    train_dataset = ToyDataset(dataset_dir)
+    train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 
-epoch_losses_train = []
-# for epoch in trange(epochs, desc='epoch', position=1, leave=False):
-for epoch in range(epochs):
-    model.train() # (set in training mode, this affects BatchNorm and dropout)
-    batch_losses = []
+    num_train_batches = int(len(train_dataset)/batch_size)
+    num_steps = epochs*num_train_batches + 1
+    num_epochs_low = int(0.75*epochs)
 
-    t0 = time.time()
-    for data, target in train_loader:
-        data = data.cuda()
-        target = target.cuda()
-        optimizer.zero_grad()
-        output = model(data)
-        loss = F.cross_entropy(output, target)
-        
-        loss_value = loss.data.cpu().numpy()
-        batch_losses.append(loss_value)
+    # print('optimizer: ', optimizer_name)
+    # print('optimizer params: ', optim_params)
+    if config['accept_model']:
+        optimizer = eval(optimizer_name)(model, **optim_params)
+    else:
+        optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
 
-        loss.backward()
-        if precond:
-            precond.step()
-        if block_size > 0 and block_decay > 0 and lr_param:
-            optimizer.step(lr=current_lr)
-        else:
-            optimizer.step()
+    # check if optimizer.step has 'lr' param
+    step_args = inspect.signature(optimizer.step)
+    lr_param = 'lr' in step_args.parameters
 
-    elapsed = time.time() - t0
-    epoch_loss = np.mean(batch_losses)
-    epoch_losses_train.append(epoch_loss)
 
-    writer.add_scalar("Loss/train", epoch_loss, epoch)
-    writer.add_scalar("Duration", elapsed, epoch)
+    if precond_name != '' and precond_name.lower() != 'none':
+        precond = eval(precond_name)(model, **precond_params)
+        # print('preconditioner: ', precond_name)
+        # print('preconditioner params: ', precond_params)
 
-    # save the model weights to disk:
-    checkpoint_path = model.checkpoints_dir + "/model_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
-    torch.save(model.state_dict(), checkpoint_path)
+    step = 0
+    current_lr = optim_params["lr"]
 
-writer.flush()
+    epoch_losses_train = []
+    for epoch in range(epochs):
+        model.train() # (set in training mode, this affects BatchNorm and dropout)
+        batch_losses = []
+
+        t0 = time.time()
+        for data, target in train_loader:
+            data = data.cuda()
+            target = target.cuda()
+            optimizer.zero_grad()
+            output = model(data)
+            loss = F.cross_entropy(output, target)
+            
+            loss_value = loss.data.cpu().numpy()
+            batch_losses.append(loss_value)
+
+            loss.backward()
+            if precond:
+                precond.step()
+            if block_size > 0 and block_decay > 0 and lr_param:
+                optimizer.step(lr=current_lr)
+            else:
+                optimizer.step()
+
+        elapsed = time.time() - t0
+        epoch_loss = np.mean(batch_losses)
+        epoch_losses_train.append(epoch_loss)
+
+        # update learning rate for next epoch
+        if block_size > 0 and block_decay > 0 and ((epoch) % block_size) == 0:
+            current_lr = current_lr * block_decay
+            if not lr_param:
+                optimizer = lr_setter.update_lr(optimizer, current_lr)
+
+        writer.add_scalar("Loss/train", epoch_loss, epoch*(i+1))
+        writer.add_scalar("Duration", elapsed, epoch*(i+1))
+
+        # save the model weights to disk:
+        # only save last 75% of the epoch:
+        if epoch >= num_epochs_low:
+            checkpoint_path = model.checkpoints_dir + "/model_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
+            torch.save(model.state_dict(), checkpoint_path)
+
+    writer.flush()

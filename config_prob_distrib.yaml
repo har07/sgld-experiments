@@ -1,10 +1,11 @@
 seed: 1
-epoch: 1000
+M: 6
+epoch: 1600
 block_size: 20
 block_decay: .5
 preconditioner: None
-optimizer: eksgld.EKSGLD
-accept_model: True
+optimizer: asgld.ASGLD
+accept_model: False
 ekfac.EKFAC:
   eps: 1.e-3
   sua: False
