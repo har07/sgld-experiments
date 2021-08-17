@@ -1,3 +1,5 @@
+# adapted from: https://github.com/fregu856/evaluating_bdl/blob/master/toyClassification/Ensemble-MAP-Adam/train.py
+
 import torch
 import torch.nn.functional as F
 from lib.dataset import ToyDataset
@@ -10,8 +12,6 @@ import yaml
 import torch.optim as optim
 
 from torch.utils.tensorboard import SummaryWriter
-
-# adapted from: https://github.com/fregu856/evaluating_bdl/blob/master/toyClassification/Ensemble-MAP-Adam/train.py
 
 dataset_dir = "./dataset"
 default_yaml =  "config_ensemble.yaml"
@@ -92,9 +92,9 @@ for i in range(M):
         optimizer = eval(optimizer_name)(network.parameters(), **optim_params)
 
     epoch_losses_train = []
-    t0 = time.time()
     for epoch in range(num_epochs):
 
+        t0 = time.time()
         network.train() # (set in training mode, this affects BatchNorm and dropout)
         batch_losses = []
         for step, (x, y) in enumerate(train_loader):
