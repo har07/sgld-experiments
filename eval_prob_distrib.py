@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import argparse
 
 # example command to run:
-# !python eval_prob_distrib.py -b /content/sgld-experiments -id pSGLD-1600 -e 1600 -n 6
+# !python eval_prob_distrib.py -b /content/sgld-experiments -id pSGLD -e 1600 -n 6
 
 parser = argparse.ArgumentParser(
                     description="Evaluate probability distribution plots "
@@ -59,7 +59,7 @@ for M in M_values:
 
             network = ToyNet(f"eval_{model_id}-{num_epochs}_1-{n_models}", project_dir=base_dir).cuda()
             step = str(int(num_epochs - i*step_size))
-            checkpoint_path = base_dir + f"/training_logs/model_{model_id}_{iter+1}/checkpoints/model_{model_id}_{iter+1}_epoch_{step}.pth"
+            checkpoint_path = base_dir + f"/training_logs/model_{model_id}-{num_epochs}_{iter+1}/checkpoints/model_{model_id}-{num_epochs}_{iter+1}_epoch_{step}.pth"
             network.load_state_dict(torch.load(checkpoint_path))
             networks.append(network)
 
@@ -86,10 +86,10 @@ for M in M_values:
 
                 false_prob_values[x_2_i, x_1_i] = mean_prob_vector[0]
 
-    plt.figure(1)
-    x_1, x_2 = np.meshgrid(x_values, x_values)
-    plt.pcolormesh(x_1, x_2, false_prob_values, cmap="RdBu", vmin=0, vmax=1)
-    plt.colorbar()
-    plt.tight_layout(pad=0.1, w_pad=0.1, h_pad=0.1)
-    plt.savefig("%s/predictive_density_M=%d_%d.png" % (network.model_dir, M, iter+1))
-    plt.close(1)
+        plt.figure(1)
+        x_1, x_2 = np.meshgrid(x_values, x_values)
+        plt.pcolormesh(x_1, x_2, false_prob_values, cmap="RdBu", vmin=0, vmax=1)
+        plt.colorbar()
+        plt.tight_layout(pad=0.1, w_pad=0.1, h_pad=0.1)
+        plt.savefig("%s/predictive_density_M=%d_%d.png" % (network.model_dir, M, iter+1))
+        plt.close(1)
