@@ -27,6 +27,7 @@ from torch.utils.tensorboard import SummaryWriter
 dataset_dir = "./dataset"
 default_yaml =  "config_prob_distrib.yaml"
 default_silent = False
+default_save_burnin = True
 default_none = "None"
 save_model_path = "/content/sgld-experiments"
 session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -48,6 +49,9 @@ parser.add_argument("-c", "--checkpoint",
                     default=default_none)
 parser.add_argument("-p", "--project_dir",
                     help="Project directory path")
+parser.add_argument("-sb", "--save-burnin",
+                    help="if False, only save models for the last 75% iterations. Default True",
+                    default=default_save_burnin)
 
 args = parser.parse_args()
 yaml_path = str(args.yaml)
@@ -55,6 +59,7 @@ silent = bool(args.silent)
 logdir = str(args.logdir)
 checkpoint = str(args.checkpoint)
 project_dir = str(args.project_dir)
+save_burnin = bool(args.save_burnin)
 
 with open(yaml_path) as f:
     config = yaml.load(f, Loader=yaml.Loader)
@@ -159,9 +164,12 @@ for i in range(M):
         writer.add_scalar("Loss/train", epoch_loss, epoch*(i+1))
         writer.add_scalar("Duration", elapsed, epoch*(i+1))
 
-        # save the model weights to disk:
-        # only save last 75% of the epoch:
-        if epoch+1 >= num_epochs_low:
+        # if `save_burnin=False`, always save model in every epoch.
+        # More expensive but we can compare small vs large number of epochs 
+        # after training once for large epochs.
+        # Otherwise if `save_burnin=True`, only save models if current epoch
+        # is >= 75% of total number of epochs (only save models from the last 25% epochs)
+        if save_burnin or epoch+1 >= num_epochs_low:
             checkpoint_path = model.checkpoints_dir + "/model_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
             torch.save(model.state_dict(), checkpoint_path)
 
