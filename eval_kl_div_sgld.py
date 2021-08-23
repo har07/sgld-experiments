@@ -23,6 +23,8 @@ epsilon = 1.0e-30
 # example command to run:
 # !python eval_kl_div_sgld.py -b /content/sgld-experiments -id ASGLD-1600 -e 1600 -n 6
 
+default_none = "None"
+
 parser = argparse.ArgumentParser(
                     description="Evaluate probability distribution plots "
                                 "From model trained using SGLD.")
@@ -34,12 +36,16 @@ parser.add_argument("-e", "--num_epochs",
                     help="number of epoch")
 parser.add_argument("-n", "--n_models",
                     help="number of models trained")
+parser.add_argument("-l", "--logdir",
+                    help="Log directory",
+                    default=default_none)
 
 args = parser.parse_args()
 base_dir = str(args.base_dir)
 model_id = str(args.model_id)
 num_epochs = int(args.num_epochs)
 n_models = int(args.n_models)
+logdir = str(args.logdir)
 
 with open(f"{base_dir}/dataset/HMC/false_prob_values.pkl", "rb") as file: # (needed for python3)
     false_prob_values_HMC = pickle.load(file) # (shape: (60, 60))
@@ -84,10 +90,13 @@ for index, value in enumerate(x_values):
 p_HMC_train = p_HMC[x_2_train_lower:x_2_train_upper, x_1_train_lower:x_1_train_upper] # (shape: (29, 14))
 p_HMC_train = p_HMC_train/np.sum(p_HMC_train)
 
-writer = SummaryWriter()
+if logdir != default_none:
+    writer = SummaryWriter(log_dir=logdir)
+else:
+    writer = SummaryWriter()
 
 # M_values = [2, 4, 8, 16, 32, 64, 128, 256, 512]
-M_values = [2, 4, 8, 16, 32, 64]
+M_values = [2, 4, 16, 64]
 for M in M_values:
     # print (M)
 

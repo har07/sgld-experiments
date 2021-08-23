@@ -67,6 +67,7 @@ with open(yaml_path) as f:
 seed = config['seed']
 M = config['M']
 epochs = config['epoch']
+poly_decay = config['poly_decay']
 block_size = config['block_size']
 block_decay = config['block_decay']
 optimizer_name = config['optimizer']
@@ -97,6 +98,14 @@ if logdir != default_none:
 else:
     writer = SummaryWriter()
 
+def lr_poly(base_lr, iter, max_iter, power):
+    return base_lr*((1-float(iter)/max_iter)**(power))
+
+# def adjust_learning_rate(optimizer, i_iter):
+#     lr = lr_poly(learning_rate, i_iter, num_steps, power)
+#     optimizer.param_groups[0]['lr'] = lr
+#     return lr
+
 for i in range(M):
     model_id = f"{optimizer_id}-{epochs}_{i+1}"
     model = ToyNet(model_id, project_dir=project_dir).cuda()
@@ -125,6 +134,7 @@ for i in range(M):
         # print('preconditioner params: ', precond_params)
 
     step = 0
+    num_steps = epochs*num_train_batches + 1
     current_lr = optim_params["lr"]
 
     epoch_losses_train = []
@@ -156,13 +166,19 @@ for i in range(M):
         epoch_losses_train.append(epoch_loss)
 
         # update learning rate for next epoch
-        if block_size > 0 and block_decay > 0 and ((epoch) % block_size) == 0:
+        should_update_lr = False
+        if poly_decay > 0:
+            should_update_lr = True
+            current_lr = lr_poly(current_lr, epoch*num_train_batches + step, num_steps, poly_decay)
+        elif block_size > 0 and block_decay > 0 and ((epoch) % block_size) == 0:
+            should_update_lr = True
             current_lr = current_lr * block_decay
-            if not lr_param:
-                optimizer = lr_setter.update_lr(optimizer, current_lr)
+        if should_update_lr and not lr_param:
+            optimizer = lr_setter.update_lr(optimizer, current_lr)
 
         writer.add_scalar("Loss/train", epoch_loss, epoch*(i+1))
         writer.add_scalar("Duration", elapsed, epoch*(i+1))
+        writer.add_scalar("Learning Rate", current_lr, epoch*(i+1))
 
         # if `save_burnin=False`, always save model in every epoch.
         # More expensive but we can compare small vs large number of epochs 

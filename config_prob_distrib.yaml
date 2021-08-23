@@ -1,8 +1,9 @@
 seed: 1
 M: 1
-epoch: 9600
-block_size: 20
-block_decay: .5
+epoch: 1600
+poly_decay: .9
+block_size: 400
+block_decay: .875
 preconditioner: None
 optimizer: asgld.ASGLD
 accept_model: False
@@ -64,7 +65,7 @@ psgld2.pSGLD:
   # optimizer: optim.
   # accept_model: False
 asgld.ASGLD:
-  lr: 1.e-1
+  lr: 1.e-3
   momentum: .9
   weight_decay: 5.e-4
   eps: 1.e-6
