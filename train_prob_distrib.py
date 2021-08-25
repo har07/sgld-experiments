@@ -98,13 +98,11 @@ if logdir != default_none:
 else:
     writer = SummaryWriter()
 
-def lr_poly(base_lr, iter, max_iter, power):
-    return base_lr*((1-float(iter)/max_iter)**(power))
-
-# def adjust_learning_rate(optimizer, i_iter):
-#     lr = lr_poly(learning_rate, i_iter, num_steps, power)
-#     optimizer.param_groups[0]['lr'] = lr
-#     return lr
+def lr_poly(start_lr, end_lr, step, decay_steps, power):
+  step = min(step, decay_steps)
+  return ((start_lr - end_lr) *
+            (1 - step / decay_steps) ** (power)
+           ) + end_lr
 
 for i in range(M):
     model_id = f"{optimizer_id}-{epochs}_{i+1}"
@@ -136,6 +134,7 @@ for i in range(M):
     step = 0
     num_steps = epochs*num_train_batches + 1
     current_lr = optim_params["lr"]
+    min_lr = 1.e-256
 
     epoch_losses_train = []
     for epoch in range(epochs):
@@ -169,7 +168,7 @@ for i in range(M):
         should_update_lr = False
         if poly_decay > 0:
             should_update_lr = True
-            current_lr = lr_poly(current_lr, epoch*num_train_batches + step, num_steps, poly_decay)
+            current_lr = lr_poly(optim_params["lr"], min_lr, epoch, epochs, poly_decay)
         elif block_size > 0 and block_decay > 0 and ((epoch) % block_size) == 0:
             should_update_lr = True
             current_lr = current_lr * block_decay
