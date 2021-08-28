@@ -191,6 +191,6 @@ for i in range(M):
                 'model_state': model.state_dict(),
                 'lr': current_lr
             }, checkpoint_path)
-            shutil.copy2(yaml_path, checkpoint_path + "/..")
+            shutil.copy2(yaml_path, model.checkpoints_dir + "/..")
 
     writer.flush()

@@ -65,7 +65,7 @@ psgld2.pSGLD:
   # optimizer: optim.
   # accept_model: False
 asgld.ASGLD:
-  lr: 1.e-1
+  lr: 9.e-3
   momentum: .9
   weight_decay: 5.e-4
   eps: 1.e-6

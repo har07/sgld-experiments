@@ -174,13 +174,13 @@ for M in M_values:
 
     # print ("########################")
 
-    writer.add_scalar("mean_total", np.mean(np.array(KL_p_HMC_q_total_values)), M)
-    writer.add_scalar("std_total", np.std(np.array(KL_p_HMC_q_total_values)), M)
+    writer.add_scalar("mean_total", np.mean(np.array(KL_p_HMC_q_total_values)), str(M))
+    writer.add_scalar("std_total", np.std(np.array(KL_p_HMC_q_total_values)), str(M))
     # writer.add_scalar("max_total", np.max(np.array(KL_p_HMC_q_total_values)), M)
     # writer.add_scalar("min_total", np.min(np.array(KL_p_HMC_q_total_values)), M)
 
-    writer.add_scalar("mean_train", np.mean(np.array(KL_p_HMC_q_train_values)), M)
-    writer.add_scalar("std_train", np.std(np.array(KL_p_HMC_q_train_values)), M)
+    writer.add_scalar("mean_train", np.mean(np.array(KL_p_HMC_q_train_values)), str(M))
+    writer.add_scalar("std_train", np.std(np.array(KL_p_HMC_q_train_values)), str(M))
     # writer.add_scalar("max_train", np.max(np.array(KL_p_HMC_q_train_values)), M)
     # writer.add_scalar("min_train", np.min(np.array(KL_p_HMC_q_train_values)), M)
 
