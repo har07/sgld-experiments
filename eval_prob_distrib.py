@@ -60,13 +60,14 @@ for M in M_values:
             network = ToyNet(f"eval_{model_id}-{num_epochs}_1-{n_models}", project_dir=base_dir).cuda()
             step = str(int(num_epochs - i*step_size))
             checkpoint_path = base_dir + f"/training_logs/model_{model_id}-{num_epochs}_{iter+1}/checkpoints/model_{model_id}-{num_epochs}_{iter+1}_epoch_{step}.pth"
-            network.load_state_dict(torch.load(checkpoint_path))
-            networks.append(network)
+            chk = torch.load(checkpoint_path)
+            network.load_state_dict(chk['model_state'])
+            networks.append((network, chk['lr']))
 
         M_float = float(len(networks))
         # print (M_float)
 
-        for network in networks:
+        for (network, lr) in networks:
             network.eval()
 
         false_prob_values = np.zeros((num_points, num_points))
@@ -76,13 +77,14 @@ for M in M_values:
                 x = torch.from_numpy(np.array([x_1_value, x_2_value])).unsqueeze(0).cuda() # (shape: (1, 2))
 
                 mean_prob_vector = np.zeros((2, ))
-                for network in networks:
+                sum_lr = sum(lr for (_, lr) in networks)
+                for (network, lr) in networks:
                     logits = network(x) # (shape: (1, num_classes)) (num_classes==2)
                     prob_vector = F.softmax(logits, dim=1) # (shape: (1, num_classes))
 
                     prob_vector = prob_vector.data.cpu().numpy()[0] # (shape: (2, ))
 
-                    mean_prob_vector += prob_vector/M_float
+                    mean_prob_vector += lr*prob_vector/sum_lr
 
                 false_prob_values[x_2_i, x_1_i] = mean_prob_vector[0]
 

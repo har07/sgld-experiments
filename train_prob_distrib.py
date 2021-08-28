@@ -186,6 +186,9 @@ for i in range(M):
         # is >= 75% of total number of epochs (only save models from the last 25% epochs)
         if save_burnin or epoch+1 >= num_epochs_low:
             checkpoint_path = model.checkpoints_dir + "/model_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
-            torch.save(model.state_dict(), checkpoint_path)
+            torch.save({
+                'model_state': model.state_dict(),
+                'lr': current_lr
+            }, checkpoint_path)
 
     writer.flush()
