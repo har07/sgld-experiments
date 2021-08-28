@@ -31,7 +31,6 @@ default_yaml =  "config/batch_cifar10.yaml"
 default_silent = False
 default_none = "None"
 save_model_path = "/content/sgld-experiments"
-session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 parser = argparse.ArgumentParser(
                     description="Trains and saves neural network for "
@@ -96,6 +95,7 @@ for optimizer_name in optimizers:
             if v or v == False:
                 optim_params[k] = v
 
+    session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     session_id = f"{optimizer_name}_{session_id}"
     print('optimizer: ', optimizer_name)
     print('optimizer params: ', optim_params)
