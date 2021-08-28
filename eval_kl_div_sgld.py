@@ -115,13 +115,14 @@ for M in M_values:
 
             network = ToyNet(f"eval_kldiv_{model_id}_1-{n_models}", project_dir=base_dir).cuda()
             checkpoint_path = base_dir + f"/training_logs/model_{model_id}_{j+1}/checkpoints/model_{model_id}_{j+1}_epoch_{int(num_epochs - i*step_size)}.pth"
-            network.load_state_dict(torch.load(checkpoint_path))
-            networks.append(network)
+            chk = torch.load(checkpoint_path)
+            network.load_state_dict(chk['model_state'])
+            networks.append((network, chk['lr']))
 
         M_float = float(len(networks))
         # print (M_float)
 
-        for network in networks:
+        for (network, lr) in networks:
             network.eval()
 
         false_prob_values = np.zeros((num_points, num_points))
@@ -130,13 +131,14 @@ for M in M_values:
                 x = torch.from_numpy(np.array([x_1_value, x_2_value])).unsqueeze(0).cuda() # (shape: (1, 2))
 
                 mean_prob_vector = np.zeros((2, ))
-                for network in networks:
+                sum_lr = sum(lr for (_, lr) in networks)
+                for (network, lr) in networks:
                     logits = network(x) # (shape: (1, num_classes)) (num_classes==2)
                     prob_vector = F.softmax(logits, dim=1) # (shape: (1, num_classes))
 
                     prob_vector = prob_vector.data.cpu().numpy()[0] # (shape: (2, ))
 
-                    mean_prob_vector += prob_vector/M_float
+                    mean_prob_vector += lr*prob_vector/sum_lr
 
                 false_prob_values[x_2_i, x_1_i] = mean_prob_vector[0]
 
@@ -174,12 +176,12 @@ for M in M_values:
 
     writer.add_scalar("mean_total", np.mean(np.array(KL_p_HMC_q_total_values)), M)
     writer.add_scalar("std_total", np.std(np.array(KL_p_HMC_q_total_values)), M)
-    writer.add_scalar("max_total", np.max(np.array(KL_p_HMC_q_total_values)), M)
-    writer.add_scalar("min_total", np.min(np.array(KL_p_HMC_q_total_values)), M)
+    # writer.add_scalar("max_total", np.max(np.array(KL_p_HMC_q_total_values)), M)
+    # writer.add_scalar("min_total", np.min(np.array(KL_p_HMC_q_total_values)), M)
 
     writer.add_scalar("mean_train", np.mean(np.array(KL_p_HMC_q_train_values)), M)
     writer.add_scalar("std_train", np.std(np.array(KL_p_HMC_q_train_values)), M)
-    writer.add_scalar("max_train", np.max(np.array(KL_p_HMC_q_train_values)), M)
-    writer.add_scalar("min_train", np.min(np.array(KL_p_HMC_q_train_values)), M)
+    # writer.add_scalar("max_train", np.max(np.array(KL_p_HMC_q_train_values)), M)
+    # writer.add_scalar("min_train", np.min(np.array(KL_p_HMC_q_train_values)), M)
 
 writer.flush()
