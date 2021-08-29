@@ -30,7 +30,6 @@ from os import makedirs
 default_yaml =  "config/batch_cifar10.yaml"
 default_silent = False
 default_none = "None"
-save_model_path = "/content/sgld-experiments"
 
 parser = argparse.ArgumentParser(
                     description="Trains and saves neural network for "
@@ -41,9 +40,12 @@ parser.add_argument("-y", "--yaml",
 parser.add_argument("-s", "--silent",
                     help="if True, do not print per epoch accuracy",
                     default=default_silent)
+parser.add_argument("-p", "--path",
+                    help="directory path for saving trained model")
 
 args = parser.parse_args()
 yaml_path = str(args.yaml)
+save_model_path = str(args.path)
 silent = bool(args.silent)
 
 with open(yaml_path) as f:

@@ -3,7 +3,7 @@ epoch: 10
 block_size: 20
 block_decay: .5
 model: resnet.ResNet34
-optimizers: ['eksgld.EKSGLD','ksgld.KSGLD','optim.SGD','sgld3.SGLD','psgld2.pSGLD','asgld.ASGLD']
+optimizers: [,'ksgld.KSGLD','optim.SGD','sgld3.SGLD','psgld2.pSGLD','asgld.ASGLD','eksgld.EKSGLD']
 eksgld.EKSGLD:
   lr: 5.e-3
   train_size: 50000
