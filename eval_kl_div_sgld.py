@@ -39,6 +39,9 @@ parser.add_argument("-n", "--n_models",
 parser.add_argument("-l", "--logdir",
                     help="Log directory",
                     default=default_none)
+parser.add_argument("-bi", "--burnin",
+                    help="burnin percentage",
+                    default=0.75)
 
 args = parser.parse_args()
 base_dir = str(args.base_dir)
@@ -46,6 +49,7 @@ model_id = str(args.model_id)
 num_epochs = int(args.num_epochs)
 n_models = int(args.n_models)
 logdir = str(args.logdir)
+burnin = float(args.burnin)
 
 with open(f"{base_dir}/dataset/HMC/false_prob_values.pkl", "rb") as file: # (needed for python3)
     false_prob_values_HMC = pickle.load(file) # (shape: (60, 60))
@@ -56,7 +60,7 @@ with open(f"{base_dir}/dataset/HMC/false_prob_values.pkl", "rb") as file: # (nee
 # L = 64
 # num_epochs = L*150
 
-num_epochs_low = int(0.75*num_epochs)
+num_epochs_low = int(burnin*num_epochs)
 # print (num_epochs_low)
 
 p_HMC = false_prob_values_HMC/np.sum(false_prob_values_HMC)
