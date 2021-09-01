@@ -26,7 +26,7 @@ from torch.utils.tensorboard import SummaryWriter
 # !python train_prob_distrib.py -p /content/sgld-experiments
 
 dataset_dir = "./dataset"
-default_yaml =  "config_prob_distrib.yaml"
+default_yaml =  "config/config_prob_distrib.yaml"
 default_silent = False
 default_save_burnin = True
 default_none = "None"
