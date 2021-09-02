@@ -12,6 +12,7 @@ import time
 import yaml
 import torch.optim as optim
 import inspect
+import shutil
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -168,5 +169,6 @@ for i in range(M):
             checkpoint_path = network.checkpoints_dir + "/model_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
             torch.save(network.state_dict(), checkpoint_path)
 
+    shutil.copy2(yaml_path, model.checkpoints_dir + "/..")
 
 writer.flush()
