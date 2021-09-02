@@ -1,0 +1,73 @@
+seed: 1
+M: 1
+epoch: 1600
+burnin: .5
+poly_decay: .55
+block_size: 200
+block_decay: .9
+preconditioner: None
+optimizer: asgld.ASGLD
+accept_model: False
+ekfac.EKFAC:
+  eps: 1.e-3
+  sua: False
+  ra: True
+  update_freq: 50
+  alpha: .5
+eksgld.EKSGLD:
+  lr: 5.e-3
+  train_size: 1040
+  num_burn_in_steps: 1600
+  add_noise: True
+  eps: 1.e-2   # Tikhonov regularization
+  sua: False  # Applies SUA approximation.
+  ra: True
+  update_freq: 50
+  alpha: .5   # Running average parameter (if == 1, no r. ave.).
+  update_style: ksgld
+ksgld.KSGLD:
+  lr: 3.2e-3
+  train_size: 1040
+  num_burn_in_steps: 600
+  add_noise: True
+  eps: 1.e-3   # Tikhonov regularization
+  sua: True  # Applies SUA approximation.
+  pi: False   # pi conrrection for Tikhonov regularization
+  update_freq: 50
+  alpha: 1.   # Running average parameter (if == 1, no r. ave.).
+  constraint_norm: True  # Scale the gradients by the squared fisher norm.
+kfac.KFAC:
+  eps: 1.e-3   # Tikhonov regularization
+  sua: True  # Applies SUA approximation.
+  pi: False   # pi conrrection for Tikhonov regularization
+  update_freq: 50
+  alpha: 1.   # Running average parameter (if == 1, no r. ave.).
+  constraint_norm: False  # Scale the gradients by the squared fisher norm.
+optim.SGD:
+  lr: 1.e-1
+  # global params:
+  # optimizer: optim.
+  # accept_model: False
+sgld3.SGLD:
+  lr: .2
+  train_size: 1040
+  lr_decay: 2.e-2
+  weight_decay: 0.
+  num_burn_in_steps: 5
+psgld2.pSGLD:
+  lr: 1.e-5
+  train_size: 1040
+  alpha: .95
+  eps: 5.e-5
+  num_burn_in_steps: 5
+  centered: False
+  addnoise: True
+  # global params:
+  # optimizer: optim.
+  # accept_model: False
+asgld.ASGLD:
+  lr: 9.e-3
+  momentum: .9
+  weight_decay: 5.e-4
+  eps: 1.e-6
+  noise: 1.e-2

@@ -1,7 +1,0 @@
-model_id: "Ensemble-MAP-Adam_1_M1024"
-epoch: 150
-M: 1024
-optimizer: optim.Adam
-accept_model: False
-optim.Adam:
-  lr: 1.e-3

@@ -133,7 +133,6 @@ for i in range(M):
         # print('preconditioner params: ', precond_params)
 
     step = 0
-    num_steps = epochs*num_train_batches + 1
     current_lr = optim_params["lr"]
     min_lr = 1.e-256
 

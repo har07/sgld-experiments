@@ -4,17 +4,19 @@ import torch
 import torch.nn.functional as F
 from lib.dataset import ToyDataset
 from lib.model import ToyNet
+import lib.lr_setter as lr_setter
 import argparse
 import numpy as np
 import datetime
 import time
 import yaml
 import torch.optim as optim
+import inspect
 
 from torch.utils.tensorboard import SummaryWriter
 
 dataset_dir = "./dataset"
-default_yaml =  "config_ensemble.yaml"
+default_yaml =  "config/config_ensemble.yaml"
 default_silent = False
 default_none = "None"
 save_model_path = "/content/sgld-experiments"
@@ -53,10 +55,13 @@ model_id = config['model_id']
 num_epochs = config['epoch']
 optimizer_name = config['optimizer']
 M = config['M']
+poly_decay = config['poly_decay']
+block_size = config['block_size']
+block_decay = config['block_decay']
+optimizer_name = config['optimizer']
 
 batch_size = 32
 alpha = 1.0
-learning_rate = 0.001
 
 model = ToyNet(model_id, project_dir=project_dir).cuda()
 train_dataset = ToyDataset(dataset_dir)
@@ -81,15 +86,27 @@ if optimizer_name in config:
 print('optimizer: ', optimizer_name)
 print('optimizer params: ', optim_params)
 
+def lr_poly(start_lr, end_lr, step, decay_steps, power):
+  step = min(step, decay_steps)
+  return ((start_lr - end_lr) *
+            (1 - step / decay_steps) ** (power)
+           ) + end_lr
 
 for i in range(M):
     network = ToyNet(model_id + "_%d" % i, project_dir=project_dir).cuda()
 
-    # optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
     if config['accept_model']:
         optimizer = eval(optimizer_name)(network, **optim_params)
     else:
         optimizer = eval(optimizer_name)(network.parameters(), **optim_params)
+
+    # check if optimizer.step has 'lr' param
+    step_args = inspect.signature(optimizer.step)
+    lr_param = 'lr' in step_args.parameters
+
+    step = 0
+    current_lr = optim_params["lr"]
+    min_lr = 1.e-256
 
     epoch_losses_train = []
     for epoch in range(num_epochs):
@@ -130,8 +147,20 @@ for i in range(M):
         epoch_loss = np.mean(batch_losses)
         epoch_losses_train.append(epoch_loss)
 
+        # update learning rate for next epoch
+        should_update_lr = False
+        if poly_decay > 0:
+            should_update_lr = True
+            current_lr = lr_poly(optim_params["lr"], min_lr, epoch, num_epochs, poly_decay)
+        elif block_size > 0 and block_decay > 0 and ((epoch) % block_size) == 0:
+            should_update_lr = True
+            current_lr = current_lr * block_decay
+        if should_update_lr and not lr_param:
+            optimizer = lr_setter.update_lr(optimizer, current_lr)
+
         writer.add_scalar("Loss/train", epoch_loss, epoch*(i+1))
         writer.add_scalar("Duration", elapsed, epoch*(i+1))
+        writer.add_scalar("Learning Rate", current_lr, epoch*(i+1))
 
         # save the model weights to disk:
         # only the last epoch will be used in evaluation:
