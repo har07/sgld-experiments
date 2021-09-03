@@ -1,6 +1,9 @@
-model_id: "Ensemble-MAP-Adam_1_M1024"
+model_id: "Ensemble-ASGLD_1_M1024"
 epoch: 150
 M: 1024
+poly_decay: .55
+block_size: 200
+block_decay: .9
 optimizer: asgld.ASGLD
 accept_model: False
 optim.Adam:

@@ -23,6 +23,8 @@ epsilon = 1.0e-30
 # example command to run:
 # !python eval_kl_div_ensemble.py -b /content/sgld-experiments -id Ensemble-MAP-Adam_1_M64 -n 64
 
+default_none = "None"
+
 parser = argparse.ArgumentParser(
                     description="Evaluate probability distribution plots "
                                 "From model trained using enemble.")
@@ -32,11 +34,15 @@ parser.add_argument("-id", "--model_id",
                     help="model id to identify checkpoint directory path")
 parser.add_argument("-n", "--n_ensemble",
                     help="number of models trained")
+parser.add_argument("-l", "--logdir",
+                    help="Log directory",
+                    default=default_none)
 
 args = parser.parse_args()
 base_dir = str(args.base_dir)
 model_id = str(args.model_id)
 n_ensemble = int(args.n_ensemble)
+logdir = str(args.logdir)
 
 with open(f"{base_dir}/dataset/HMC/false_prob_values.pkl", "rb") as file: # (needed for python3)
     false_prob_values_HMC = pickle.load(file) # (shape: (60, 60))
@@ -75,7 +81,10 @@ for index, value in enumerate(x_values):
 p_HMC_train = p_HMC[x_2_train_lower:x_2_train_upper, x_1_train_lower:x_1_train_upper] # (shape: (29, 14))
 p_HMC_train = p_HMC_train/np.sum(p_HMC_train)
 
-writer = SummaryWriter()
+if logdir != default_none:
+    writer = SummaryWriter(log_dir=logdir)
+else:
+    writer = SummaryWriter()
 
 # M_values = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
 M_values = [1, 2, 4, 8, 16, 32]
@@ -95,7 +104,7 @@ for M in M_values:
             if (l*M + i) % 100 == 0:
                 print (l*M + i)
 
-            network = ToyNet(f"eval_kldiv_Ensemble-MAP-Adam_1_M{n_ensemble}", project_dir=base_dir).cuda()
+            network = ToyNet(f"eval_kldiv_{model_id}", project_dir=base_dir).cuda()
             checkpoint_path = base_dir + f"/training_logs/model_{model_id}_{l*M + i}/checkpoints/model_{model_id}_epoch_150.pth"
             network.load_state_dict(torch.load(checkpoint_path))
             networks.append(network)
@@ -156,12 +165,12 @@ for M in M_values:
 
     writer.add_scalar("mean_total", np.mean(np.array(KL_p_HMC_q_total_values)), M)
     writer.add_scalar("std_total", np.std(np.array(KL_p_HMC_q_total_values)), M)
-    writer.add_scalar("max_total", np.max(np.array(KL_p_HMC_q_total_values)), M)
-    writer.add_scalar("min_total", np.min(np.array(KL_p_HMC_q_total_values)), M)
+    # writer.add_scalar("max_total", np.max(np.array(KL_p_HMC_q_total_values)), M)
+    # writer.add_scalar("min_total", np.min(np.array(KL_p_HMC_q_total_values)), M)
 
     writer.add_scalar("mean_train", np.mean(np.array(KL_p_HMC_q_train_values)), M)
     writer.add_scalar("std_train", np.std(np.array(KL_p_HMC_q_train_values)), M)
-    writer.add_scalar("max_train", np.max(np.array(KL_p_HMC_q_train_values)), M)
-    writer.add_scalar("min_train", np.min(np.array(KL_p_HMC_q_train_values)), M)
+    # writer.add_scalar("max_train", np.max(np.array(KL_p_HMC_q_train_values)), M)
+    # writer.add_scalar("min_train", np.min(np.array(KL_p_HMC_q_train_values)), M)
 
 writer.flush()

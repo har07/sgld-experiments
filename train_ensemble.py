@@ -5,6 +5,13 @@ import torch.nn.functional as F
 from lib.dataset import ToyDataset
 from lib.model import ToyNet
 import lib.lr_setter as lr_setter
+import lib.psgld2 as psgld2
+import lib.sgld3 as sgld3
+import lib.ekfac_precond as ekfac
+import lib.kfac_precond as kfac
+import lib.asgld as asgld
+import lib.ksgld as ksgld
+import lib.eksgld as eksgld
 import argparse
 import numpy as np
 import datetime
@@ -64,7 +71,6 @@ optimizer_name = config['optimizer']
 batch_size = 32
 alpha = 1.0
 
-model = ToyNet(model_id, project_dir=project_dir).cuda()
 train_dataset = ToyDataset(dataset_dir)
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 
@@ -169,6 +175,6 @@ for i in range(M):
             checkpoint_path = network.checkpoints_dir + "/model_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
             torch.save(network.state_dict(), checkpoint_path)
 
-    shutil.copy2(yaml_path, model.checkpoints_dir + "/..")
+    shutil.copy2(yaml_path, network.checkpoints_dir + "/..")
 
 writer.flush()
