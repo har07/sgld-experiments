@@ -61,6 +61,8 @@ with open(f"{base_dir}/dataset/HMC/false_prob_values.pkl", "rb") as file: # (nee
 # num_epochs = L*150
 
 num_epochs_low = int(burnin*num_epochs)
+if num_epochs_low == 0:
+    num_epochs_low = 1
 # print (num_epochs_low)
 
 p_HMC = false_prob_values_HMC/np.sum(false_prob_values_HMC)

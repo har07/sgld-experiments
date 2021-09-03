@@ -27,14 +27,20 @@ parser.add_argument("-e", "--epoch",
                     help="number of epochs done for training the model")                    
 parser.add_argument("-n", "--n_models",
                     help="number of models trained")
+parser.add_argument("-bi", "--burnin",
+                    help="burnin percentage",
+                    default=0.75)
 
 args = parser.parse_args()
 base_dir = str(args.base_dir)
 model_id = str(args.model_id)
 num_epochs = int(args.epoch)
 n_models = int(args.n_models)
+burnin = float(args.burnin)
 
-num_epochs_low = int(0.75*num_epochs)
+num_epochs_low = int(burnin*num_epochs)
+if num_epochs_low == 0:
+    num_epochs_low = 1
 # print (num_epochs_low)
 
 x_min = -6.0

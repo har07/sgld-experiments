@@ -68,6 +68,7 @@ with open(yaml_path) as f:
 seed = config['seed']
 M = config['M']
 epochs = config['epoch']
+burnin = config['burnin']
 poly_decay = config['poly_decay']
 block_size = config['block_size']
 block_decay = config['block_decay']
@@ -113,7 +114,7 @@ for i in range(M):
 
     num_train_batches = int(len(train_dataset)/batch_size)
     num_steps = epochs*num_train_batches + 1
-    num_epochs_low = int(0.75*epochs)
+    num_epochs_low = int(burnin*epochs)
 
     # print('optimizer: ', optimizer_name)
     # print('optimizer params: ', optim_params)
