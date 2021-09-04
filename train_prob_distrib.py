@@ -69,9 +69,6 @@ seed = config['seed']
 M = config['M']
 epochs = config['epoch']
 burnin = config['burnin']
-poly_decay = config['poly_decay']
-block_size = config['block_size']
-block_decay = config['block_decay']
 optimizer_name = config['optimizer']
 lr_schedule_name = config['lr_schedule']
 
@@ -147,7 +144,7 @@ for i in range(M):
             batch_losses.append(loss_value)
 
             loss.backward()
-            if block_size > 0 and block_decay > 0 and lr_param:
+            if lr_param:
                 optimizer.step(lr=current_lr)
             else:
                 optimizer.step()
@@ -158,7 +155,7 @@ for i in range(M):
 
         # update learning rate for next epoch
         current_lr = lr_setter.update_lr(lr_schedule_name, optimizer, lr_param, optim_params['lr'], \
-            current_lr, epoch, epochs **lr_schedule_params)
+            current_lr, epoch, epochs, **lr_schedule_params)
 
         writer.add_scalar("Loss/train", epoch_loss, epoch*(i+1))
         writer.add_scalar("Duration", elapsed, epoch*(i+1))
