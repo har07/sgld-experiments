@@ -2,18 +2,18 @@ seed: 1
 M: 1
 epoch: 1600
 burnin: .5
-poly_decay: .55
-block_size: 200
-block_decay: .9
-preconditioner: None
 optimizer: asgld.ASGLD
 accept_model: False
-ekfac.EKFAC:
-  eps: 1.e-3
-  sua: False
-  ra: True
-  update_freq: 50
-  alpha: .5
+lr_schedule: welling_teh_2011
+welling_teh_2011:
+  a: 1.e-2
+  b: 1.
+  gamma: 55.e-2
+polynomial_decay:
+  decay: 55.e-2
+block_decay:
+  block_size: 200
+  block_decay: .9
 eksgld.EKSGLD:
   lr: 5.e-3
   train_size: 1040
@@ -36,13 +36,6 @@ ksgld.KSGLD:
   update_freq: 50
   alpha: 1.   # Running average parameter (if == 1, no r. ave.).
   constraint_norm: True  # Scale the gradients by the squared fisher norm.
-kfac.KFAC:
-  eps: 1.e-3   # Tikhonov regularization
-  sua: True  # Applies SUA approximation.
-  pi: False   # pi conrrection for Tikhonov regularization
-  update_freq: 50
-  alpha: 1.   # Running average parameter (if == 1, no r. ave.).
-  constraint_norm: False  # Scale the gradients by the squared fisher norm.
 optim.SGD:
   lr: 1.e-1
   # global params:

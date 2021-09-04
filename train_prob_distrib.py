@@ -17,8 +17,8 @@ import numpy as np
 import yaml
 import datetime
 import time
-import inspect
 import shutil
+import inspect
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -73,7 +73,7 @@ poly_decay = config['poly_decay']
 block_size = config['block_size']
 block_decay = config['block_decay']
 optimizer_name = config['optimizer']
-precond_name = config['preconditioner']
+lr_schedule_name = config['lr_schedule']
 
 batch_size = 32
 optimizer_id = optimizer_name.split('.')[1]
@@ -86,14 +86,13 @@ if optimizer_name in config:
         if v or v == False:
             optim_params[k] = v
 
-precond_params = {}
-precond = None
-if precond_name in config:
-    precond_params2 = config[precond_name]
-    for k in precond_params2:
-        v = precond_params2[k]
+lr_schedule_params = {}
+if lr_schedule_name in config:
+    lr_schedule_params2 = config[lr_schedule_name]
+    for k in lr_schedule_params2:
+        v = lr_schedule_params2[k]
         if v or v == False:
-            precond_params[k] = v
+            lr_schedule_params[k] = v
 
 if logdir != default_none:
     writer = SummaryWriter(log_dir=logdir)
@@ -127,12 +126,6 @@ for i in range(M):
     step_args = inspect.signature(optimizer.step)
     lr_param = 'lr' in step_args.parameters
 
-
-    if precond_name != '' and precond_name.lower() != 'none':
-        precond = eval(precond_name)(model, **precond_params)
-        # print('preconditioner: ', precond_name)
-        # print('preconditioner params: ', precond_params)
-
     step = 0
     current_lr = optim_params["lr"]
     min_lr = 1.e-256
@@ -154,8 +147,6 @@ for i in range(M):
             batch_losses.append(loss_value)
 
             loss.backward()
-            if precond:
-                precond.step()
             if block_size > 0 and block_decay > 0 and lr_param:
                 optimizer.step(lr=current_lr)
             else:
@@ -166,15 +157,8 @@ for i in range(M):
         epoch_losses_train.append(epoch_loss)
 
         # update learning rate for next epoch
-        should_update_lr = False
-        if poly_decay > 0:
-            should_update_lr = True
-            current_lr = lr_poly(optim_params["lr"], min_lr, epoch, epochs, poly_decay)
-        elif block_size > 0 and block_decay > 0 and ((epoch) % block_size) == 0:
-            should_update_lr = True
-            current_lr = current_lr * block_decay
-        if should_update_lr and not lr_param:
-            optimizer = lr_setter.update_lr(optimizer, current_lr)
+        current_lr = lr_setter.update_lr(lr_schedule_name, optimizer, lr_param, optim_params['lr'], \
+            current_lr, epoch, epochs **lr_schedule_params)
 
         writer.add_scalar("Loss/train", epoch_loss, epoch*(i+1))
         writer.add_scalar("Duration", elapsed, epoch*(i+1))
