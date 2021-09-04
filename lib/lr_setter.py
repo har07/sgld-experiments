@@ -1,3 +1,5 @@
+import numpy as np
+
 def update_optimizer(optimizer, lr):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
@@ -9,10 +11,24 @@ def lr_poly(start_lr, end_lr, step, decay_steps, power):
             (1 - step / decay_steps) ** (power)
            ) + end_lr
 
-def update_lr(schedule_name, optimizer, accept_lr, initial_lr, current_lr, current_epoch, max_epoch, **kwargs):
+def lr_cyclic(M, lr_0, epoch, num_batch, batch_idx):
+    T = epoch * num_batch
+    rcounter = epoch*num_batch+batch_idx
+    cos_inner = np.pi * (rcounter % (T // M))
+    cos_inner /= T // M
+    cos_out = np.cos(cos_inner) + 1
+    lr = 0.5*cos_out*lr_0
+
+    return lr
+
+def update_lr(schedule_name, optimizer, accept_lr, initial_lr, current_lr, current_epoch, \
+    max_epoch, num_batch, batch_idx, **kwargs):
 
     should_update_lr = False
-    if schedule_name == "welling_teh_2011":
+    if schedule_name == "cyclic":
+        should_update_lr = True
+        current_lr = lr_cyclic(kwargs["cycle"], initial_lr, current_epoch, num_batch, batch_idx)
+    elif schedule_name == "welling_teh_2011":
         should_update_lr = True
         current_lr = kwargs['a'] * (kwargs['b'] + current_epoch) ** -kwargs['gamma']
     elif schedule_name == "polynomial_decay":

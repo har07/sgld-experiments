@@ -133,7 +133,7 @@ for i in range(M):
         batch_losses = []
 
         t0 = time.time()
-        for data, target in train_loader:
+        for batch_idx, (data, target) in enumerate(train_loader):
             data = data.cuda()
             target = target.cuda()
             optimizer.zero_grad()
@@ -142,6 +142,10 @@ for i in range(M):
             
             loss_value = loss.data.cpu().numpy()
             batch_losses.append(loss_value)
+
+            # update learning rate for next epoch
+            current_lr = lr_setter.update_lr(lr_schedule_name, optimizer, lr_param, optim_params['lr'], \
+                current_lr, epoch, epochs, num_train_batches, batch_idx, **lr_schedule_params)
 
             loss.backward()
             if lr_param:
@@ -152,10 +156,6 @@ for i in range(M):
         elapsed = time.time() - t0
         epoch_loss = np.mean(batch_losses)
         epoch_losses_train.append(epoch_loss)
-
-        # update learning rate for next epoch
-        current_lr = lr_setter.update_lr(lr_schedule_name, optimizer, lr_param, optim_params['lr'], \
-            current_lr, epoch, epochs, **lr_schedule_params)
 
         writer.add_scalar("Loss/train", epoch_loss, epoch*(i+1))
         writer.add_scalar("Duration", elapsed, epoch*(i+1))
