@@ -1,6 +1,7 @@
 # adapted from: https://github.com/fregu856/evaluating_bdl/blob/master/toyClassification/SGLD-64/train.py
 
 import torch
+import torch.optim as optim
 import torch.nn.functional as F
 from lib.dataset import ToyDataset
 from lib.model import ToyNet
@@ -157,7 +158,7 @@ for i in range(M):
             batch_losses.append(loss_likelihood)
 
             if use_prior:
-                loss = loss_prior(model, loss_likelihood, current_lr, len(train_dataset))
+                loss = loss_prior(model, loss, current_lr, len(train_dataset))
 
             # update learning rate for next epoch
             current_lr = lr_setter.update_lr(lr_schedule_name, optimizer, lr_param, optim_params['lr'], \
