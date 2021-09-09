@@ -8,6 +8,7 @@ from lib.model import ToyNet
 import lib.lr_setter as lr_setter
 import lib.psgld2 as psgld2
 import lib.sgld3 as sgld3
+import lib.sgld4 as sgld4
 import lib.ekfac_precond as ekfac
 import lib.kfac_precond as kfac
 import lib.asgld as asgld
@@ -145,6 +146,7 @@ for i in range(M):
     # check if optimizer.step has 'lr' param
     step_args = inspect.signature(optimizer.step)
     lr_param = 'lr' in step_args.parameters
+    print('optimizer step has lr param? ', lr_param)
 
     step = 0
     current_lr = optim_params["lr"]
