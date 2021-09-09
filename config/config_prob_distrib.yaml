@@ -2,10 +2,10 @@ seed: 1
 M: 1
 epoch: 1200
 burnin: .5
-optimizer: psgld2.pSGLD
+optimizer: optim.SGD
 accept_model: False
 use_prior: True
-lr_schedule: welling_teh_2011
+lr_schedule: polynomial_decay
 cyclic:
   cycle: 4
 welling_teh_2011:
@@ -13,7 +13,7 @@ welling_teh_2011:
   b: 1.
   gamma: 37.e-2
 polynomial_decay:
-  decay: 55.e-2
+  decay: 9.e-1
 block_decay:
   block_size: 200
   block_decay: .9
@@ -40,7 +40,7 @@ ksgld.KSGLD:
   alpha: 1.   # Running average parameter (if == 1, no r. ave.).
   constraint_norm: True  # Scale the gradients by the squared fisher norm.
 optim.SGD:
-  lr: 1.e-1
+  lr: 5.e-2
   # global params:
   # optimizer: optim.
   # accept_model: False
