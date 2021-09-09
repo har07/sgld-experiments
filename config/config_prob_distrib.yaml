@@ -1,16 +1,17 @@
 seed: 1
 M: 1
-epoch: 1600
+epoch: 1200
 burnin: .5
-optimizer: asgld.ASGLD
+optimizer: psgld2.pSGLD
 accept_model: False
+use_prior: True
 lr_schedule: welling_teh_2011
 cyclic:
   cycle: 4
 welling_teh_2011:
-  a: 1.e-2
+  a: 1.e-5
   b: 1.
-  gamma: 55.e-2
+  gamma: 37.e-2
 polynomial_decay:
   decay: 55.e-2
 block_decay:
@@ -61,8 +62,8 @@ psgld2.pSGLD:
   # optimizer: optim.
   # accept_model: False
 asgld.ASGLD:
-  lr: 9.e-3
+  lr: 1.e-2
   momentum: .9
   weight_decay: 5.e-4
   eps: 1.e-6
-  noise: 1.e-2
+  noise: 1.5e-2

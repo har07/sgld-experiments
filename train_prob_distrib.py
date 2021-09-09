@@ -19,6 +19,7 @@ import datetime
 import time
 import shutil
 import inspect
+import math
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -71,6 +72,7 @@ epochs = config['epoch']
 burnin = config['burnin']
 optimizer_name = config['optimizer']
 lr_schedule_name = config['lr_schedule']
+use_prior = config['use_prior']
 
 batch_size = 32
 optimizer_id = optimizer_name.split('.')[1]
@@ -96,11 +98,22 @@ if logdir != default_none:
 else:
     writer = SummaryWriter()
 
-def lr_poly(start_lr, end_lr, step, decay_steps, power):
-  step = min(step, decay_steps)
-  return ((start_lr - end_lr) *
-            (1 - step / decay_steps) ** (power)
-           ) + end_lr
+def loss_prior(network, loss_likelihood, lr, N):
+    alpha = 1.0
+    loss_prior = 0.0
+    for param in network.parameters():
+        if param.requires_grad:
+            loss_prior += (1.0/2.0)*(1.0/N)*(1.0/alpha)*torch.sum(torch.pow(param, 2))
+
+    loss_noise = 0.0
+    for param in network.parameters():
+        if param.requires_grad:
+            loss_noise += (1.0/math.sqrt(N))*math.sqrt(2.0/lr)*torch.sum(param*torch.normal(torch.zeros(param.size()), std=1.0).cuda())
+
+    loss = loss_likelihood + loss_prior + loss_noise
+
+    return loss
+
 
 for i in range(M):
     model_id = f"{optimizer_id}-{epochs}_{i+1}"
@@ -140,8 +153,11 @@ for i in range(M):
             output = model(data)
             loss = F.cross_entropy(output, target)
             
-            loss_value = loss.data.cpu().numpy()
-            batch_losses.append(loss_value)
+            loss_likelihood = loss.data.cpu().numpy()
+            batch_losses.append(loss_likelihood)
+
+            if use_prior:
+                loss = loss_prior(model, loss_likelihood, current_lr, len(train_dataset))
 
             # update learning rate for next epoch
             current_lr = lr_setter.update_lr(lr_schedule_name, optimizer, lr_param, optim_params['lr'], \
