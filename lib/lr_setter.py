@@ -33,7 +33,7 @@ def update_lr(schedule_name, optimizer, accept_lr, initial_lr, current_lr, curre
         current_lr = kwargs['a'] * (kwargs['b'] + current_epoch) ** -kwargs['gamma']
     elif schedule_name == "polynomial_decay":
         should_update_lr = True
-        current_lr = lr_poly(initial_lr, kwargs['min_lr'], current_epoch, max_epoch, kwargs['poly_decay'])
+        current_lr = lr_poly(initial_lr, kwargs['min_lr'], current_epoch, max_epoch, kwargs['decay'])
     elif schedule_name == "block_decay":
         if ((current_epoch) % kwargs['block_size']) == 0:
             should_update_lr = True
