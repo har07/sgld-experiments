@@ -21,6 +21,7 @@ import time
 import shutil
 import inspect
 import math
+import random
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -74,6 +75,11 @@ burnin = config['burnin']
 optimizer_name = config['optimizer']
 lr_schedule_name = config['lr_schedule']
 use_prior = config['use_prior']
+
+torch.cuda.set_device(0)
+torch.manual_seed(seed)
+random.seed(seed)
+np.random.seed(seed)
 
 batch_size = 32
 optimizer_id = optimizer_name.split('.')[1]
