@@ -105,19 +105,22 @@ if logdir != default_none:
 else:
     writer = SummaryWriter()
 
-def loss_prior(network, loss_likelihood, lr, N):
+def loss_prior(network, loss_likelihood, lr, N, with_noise=True):
     alpha = 1.0
     loss_prior = 0.0
     for param in network.parameters():
         if param.requires_grad:
             loss_prior += (1.0/2.0)*(1.0/N)*(1.0/alpha)*torch.sum(torch.pow(param, 2))
 
-    loss_noise = 0.0
-    for param in network.parameters():
-        if param.requires_grad:
-            loss_noise += (1.0/math.sqrt(N))*math.sqrt(2.0/lr)*torch.sum(param*torch.normal(torch.zeros(param.size()), std=1.0).cuda())
+    if with_noise:
+        loss_noise = 0.0
+        for param in network.parameters():
+            if param.requires_grad:
+                loss_noise += (1.0/math.sqrt(N))*math.sqrt(2.0/lr)*torch.sum(param*torch.normal(torch.zeros(param.size()), std=1.0).cuda())
 
-    loss = loss_likelihood + loss_prior + loss_noise
+        loss = loss_likelihood + loss_prior + loss_noise
+    else:
+        loss = loss_likelihood + loss_prior
 
     return loss
 
@@ -164,7 +167,10 @@ for i in range(M):
             batch_losses.append(loss_likelihood)
 
             if use_prior:
-                loss = loss_prior(model, loss, current_lr, len(train_dataset))
+                add_noise = False
+                if optimizer_name[:6] == "optim.":
+                    add_noise = True
+                loss = loss_prior(model, loss, current_lr, len(train_dataset), add_noise)
 
             # update learning rate for next epoch
             current_lr = lr_setter.update_lr(lr_schedule_name, optimizer, lr_param, optim_params['lr'], \
