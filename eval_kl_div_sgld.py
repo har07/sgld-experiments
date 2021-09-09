@@ -102,7 +102,7 @@ else:
     writer = SummaryWriter()
 
 # M_values = [2, 4, 8, 16, 32, 64, 128, 256, 512]
-M_values = [2, 4, 16, 64]
+M_values = [8, 16, 32, 64]
 for M in M_values:
     # print (M)
 

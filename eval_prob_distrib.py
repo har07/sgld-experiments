@@ -47,8 +47,8 @@ x_min = -6.0
 x_max = 6.0
 num_points = 60
 
-# M_values = [1, 4, 16, 64, 256]
-M_values = [1, 4, 16, 64]
+# M_values = [8, 16, 32, 64, 128, 256]
+M_values = [8, 16, 32, 64]
 for M in M_values:
     for iter in range(n_models):
         # print(M)
