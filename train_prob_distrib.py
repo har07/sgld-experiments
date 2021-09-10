@@ -105,8 +105,7 @@ if logdir != default_none:
 else:
     writer = SummaryWriter()
 
-def loss_prior(network, loss_likelihood, lr, N, with_noise=True):
-    alpha = 1.0
+def loss_prior(network, loss_likelihood, lr, N, with_noise=True, alpha=1.0):
     loss_prior = 0.0
     for param in network.parameters():
         if param.requires_grad:
@@ -167,10 +166,11 @@ for i in range(M):
             batch_losses.append(loss_likelihood)
 
             if use_prior:
+                alpha = config['prior_alpha']
                 add_noise = False
                 if optimizer_name[:6] == "optim.":
                     add_noise = True
-                loss = loss_prior(model, loss, current_lr, len(train_dataset), add_noise)
+                loss = loss_prior(model, loss, current_lr, len(train_dataset), with_noise=add_noise, alpha=alpha)
 
             # update learning rate for next epoch
             current_lr = lr_setter.update_lr(lr_schedule_name, optimizer, lr_param, optim_params['lr'], \

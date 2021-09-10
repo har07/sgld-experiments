@@ -2,9 +2,10 @@ seed: 1
 M: 1
 epoch: 1200
 burnin: .5
-optimizer: optim.SGD
+optimizer: asgld.ASGLD
 accept_model: False
 use_prior: True
+prior_alpha: 1.0
 lr_schedule: polynomial_decay
 cyclic:
   cycle: 4
