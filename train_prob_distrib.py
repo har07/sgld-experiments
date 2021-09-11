@@ -13,6 +13,8 @@ import lib.kfac_precond as kfac
 import lib.asgld as asgld
 import lib.ksgld as ksgld
 import lib.eksgld as eksgld
+import lib.ekfac_precond as ekfac
+import lib.kfac_precond as kfac
 import argparse
 import numpy as np
 import yaml
@@ -73,6 +75,7 @@ M = config['M']
 epochs = config['epoch']
 burnin = config['burnin']
 optimizer_name = config['optimizer']
+precond_name = config['preconditioner']
 lr_schedule_name = config['lr_schedule']
 use_prior = config['use_prior']
 
@@ -99,6 +102,15 @@ if lr_schedule_name in config:
         v = lr_schedule_params2[k]
         if v or v == False:
             lr_schedule_params[k] = v
+
+precond_params = {}
+precond = None
+if precond_name in config:
+    precond_params2 = config[precond_name]
+    for k in precond_params2:
+        v = precond_params2[k]
+        if v or v == False:
+            precond_params[k] = v
 
 if logdir != default_none:
     writer = SummaryWriter(log_dir=logdir)
@@ -141,6 +153,9 @@ for i in range(M):
     else:
         optimizer = eval(optimizer_name)(model.parameters(), **optim_params)
 
+    if precond_name != '' and precond_name.lower() != 'none':
+        precond = eval(precond_name)(model, **precond_params)
+
     # check if optimizer.step has 'lr' param
     step_args = inspect.signature(optimizer.step)
     lr_param = 'lr' in step_args.parameters
@@ -177,6 +192,8 @@ for i in range(M):
                 current_lr, epoch, epochs, num_train_batches, batch_idx, **lr_schedule_params)
 
             loss.backward()
+            if precond:
+                precond.step()
             if lr_param:
                 optimizer.step(lr=current_lr)
             else:
