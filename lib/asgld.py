@@ -7,7 +7,7 @@ class ASGLD(Optimizer):
         Borrowed from https://github.com/Anirudhsekar96/Noisy_SGD
         Implements the Gaussian Gradient Distruption Optimization
     '''
-    def __init__(self, params, lr=1e-2, momentum=0.9, weight_decay=5e-4,eps=1e-6, noise=0.1):
+    def __init__(self, params, lr=1e-2, momentum=0.9, weight_decay=5e-4,eps=1e-6, noise=0.1, use_prior=False):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= weight_decay:
@@ -19,7 +19,7 @@ class ASGLD(Optimizer):
         if not 0.0 <= noise:
             raise ValueError("Invalid noise value: {}".format(noise))
         
-        
+        self.use_prior = use_prior
         defaults = dict(lr=lr, momentum=momentum, weight_decay=weight_decay, eps=eps, noise=noise)
         super(ASGLD, self).__init__(params, defaults)
             
@@ -75,7 +75,7 @@ class ASGLD(Optimizer):
                 # if state['step'] == 2:
                 #     print('generate noise from mean: ', old_mean, ' and std: ', old_std)
                 new_updt = torch.normal(mean=old_mean, std=old_std)
-                updt = grad.add(new_updt, alpha=group['noise'])
+                updt = grad.add(new_updt, alpha=group['noise']) # last row: (g_s(\Theta_t) + \Psi\Epsilon_t)
                 if weight_decay != 0:
                     updt.add_(p.data, alpha=weight_decay)
 

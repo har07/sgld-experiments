@@ -78,6 +78,7 @@ optimizer_name = config['optimizer']
 precond_name = config['preconditioner']
 lr_schedule_name = config['lr_schedule']
 use_prior = config['use_prior']
+skip_noise = config['skip_noise']
 
 torch.cuda.set_device(0)
 torch.manual_seed(seed)
@@ -123,6 +124,8 @@ def loss_prior(network, loss_likelihood, lr, N, with_noise=True, alpha=1.0):
         if param.requires_grad:
             loss_prior += (1.0/2.0)*(1.0/N)*(1.0/alpha)*torch.sum(torch.pow(param, 2))
 
+    if skip_noise != 'None' and skip_noise:
+        with_noise = False
     if with_noise:
         loss_noise = 0.0
         for param in network.parameters():

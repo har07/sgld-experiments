@@ -6,7 +6,8 @@ optimizer: optim.SGD
 accept_model: False
 use_prior: True
 prior_alpha: 1.
-preconditioner: kfac.KFAC
+preconditioner: None
+skip_noise: True  # True | False | None
 lr_schedule: polynomial_decay
 cyclic:
   cycle: 4
