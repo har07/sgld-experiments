@@ -6,8 +6,8 @@ optimizer: optim.SGD
 accept_model: False
 use_prior: True
 prior_alpha: 1.
-preconditioner: None
-skip_noise: True  # True | False | None
+preconditioner: ekfac.EKFAC
+skip_noise: False  # True | False | None
 lr_schedule: polynomial_decay
 cyclic:
   cycle: 4
@@ -51,13 +51,13 @@ kfac.KFAC:
   alpha: 1.   # Running average parameter (if == 1, no r. ave.).
   constraint_norm: True  # Scale the gradients by the squared fisher norm.
 ekfac.EKFAC:
-  eps: 1.e-2   # Tikhonov regularization
+  eps: 7.e-5   # Tikhonov regularization
   sua: False  # Applies SUA approximation.
   ra: True
   update_freq: 100
   alpha: .75   # Running average parameter (if == 1, no r. ave.).
 optim.SGD:
-  lr: 5.e-2
+  lr: 5.e-1
   # global params:
   # optimizer: optim.SGD
   # accept_model: False

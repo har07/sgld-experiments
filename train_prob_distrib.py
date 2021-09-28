@@ -235,7 +235,7 @@ for i in range(M):
     # save logits, softmaxes and labels:
     logits = torch.cat(logits_list).cpu().numpy()
     labels = torch.cat(labels_list).cpu().numpy()
-    save_logits_path = model.checkpoints_dir + "/logits_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
+    save_logits_path = model.checkpoints_dir + "/logits_" + model_id + ".pth"
     torch.save({
         'logits': logits,
         'labels': labels,
