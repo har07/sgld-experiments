@@ -12,6 +12,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import argparse
+from scipy.special import softmax
 
 # example command to run:
 # !python eval_prob_distrib.py -b /content/sgld-experiments -id pSGLD -e 1600 -n 6
@@ -76,6 +77,9 @@ for M in M_values:
         for (network, lr) in networks:
             network.eval()
 
+        # collect all the logits and labels for the validation set
+        logits_list = []
+        labels_list = []
         false_prob_values = np.zeros((num_points, num_points))
         x_values = np.linspace(x_min, x_max, num_points, dtype=np.float32)
         for x_1_i, x_1_value in enumerate(x_values):
@@ -93,6 +97,16 @@ for M in M_values:
                     mean_prob_vector += lr*prob_vector/sum_lr
 
                 false_prob_values[x_2_i, x_1_i] = mean_prob_vector[0]
+
+        # save logits, softmaxes and labels:
+        logits = torch.cat(logits_list).cpu().numpy()
+        labels = torch.cat(labels_list).cpu().numpy()
+        save_logits_path = "%s/logits_softmax_M_%d_%d.pth" % (network.model_dir, M, iter+1)
+        torch.save({
+            'logits': logits,
+            'labels': labels,
+            'softmax': softmax(logits, axis=1)
+        }, save_logits_path)
 
         plt.figure(1)
         x_1, x_2 = np.meshgrid(x_values, x_values)
