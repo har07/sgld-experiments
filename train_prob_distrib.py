@@ -219,16 +219,6 @@ for i in range(M):
         writer.add_scalar("Duration", elapsed, epoch*(i+1))
         writer.add_scalar("Learning Rate", current_lr, epoch*(i+1))
 
-        # save logits, softmaxes and labels:
-        logits = torch.cat(logits_list)
-        labels = torch.cat(labels_list)
-        save_logits_path = model.checkpoints_dir + "/logits_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
-        torch.save({
-            'logits': logits.numpy(),
-            'labels': labels.numpy(),
-            'softmax': softmax(logits.numpy(), axis=1)
-        }, save_logits_path)
-
 
         # if `save_burnin=False`, always save model in every epoch.
         # More expensive but we can compare small vs large number of epochs 
@@ -241,6 +231,16 @@ for i in range(M):
                 'model_state': model.state_dict(),
                 'lr': current_lr
             }, checkpoint_path)
+    
+    # save logits, softmaxes and labels:
+    logits = torch.cat(logits_list).cpu().numpy()
+    labels = torch.cat(labels_list).cpu().numpy()
+    save_logits_path = model.checkpoints_dir + "/logits_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
+    torch.save({
+        'logits': logits,
+        'labels': labels,
+        'softmax': softmax(logits, axis=1)
+    }, save_logits_path)
     
     shutil.copy2(yaml_path, model.checkpoints_dir + "/..")
 
