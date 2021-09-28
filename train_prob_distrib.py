@@ -24,6 +24,7 @@ import shutil
 import inspect
 import math
 import random
+from scipy.special import softmax
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -167,6 +168,10 @@ for i in range(M):
     current_lr = optim_params["lr"]
     min_lr = 1.e-256
 
+    # collect all the logits and labels for the validation set
+    logits_list = []
+    labels_list = []
+
     epoch_losses_train = []
     for epoch in range(epochs):
         model.train() # (set in training mode, this affects BatchNorm and dropout)
@@ -178,6 +183,10 @@ for i in range(M):
             target = target.cuda()
             optimizer.zero_grad()
             output = model(data)
+
+            logits_list.append(output)
+            labels_list.append(target)
+
             loss = F.cross_entropy(output, target)
             
             loss_likelihood = loss.data.cpu().numpy()
@@ -209,6 +218,17 @@ for i in range(M):
         writer.add_scalar("Loss/train", epoch_loss, epoch*(i+1))
         writer.add_scalar("Duration", elapsed, epoch*(i+1))
         writer.add_scalar("Learning Rate", current_lr, epoch*(i+1))
+
+        # save logits, softmaxes and labels:
+        logits = torch.cat(logits_list)
+        labels = torch.cat(labels_list)
+        save_logits_path = model.checkpoints_dir + "/logits_" + model_id +"_epoch_" + str(epoch+1) + ".pth"
+        torch.save({
+            'logits': logits.numpy(),
+            'labels': labels.numpy(),
+            'softmax': softmax(logits.numpy(), axis=1)
+        }, save_logits_path)
+
 
         # if `save_burnin=False`, always save model in every epoch.
         # More expensive but we can compare small vs large number of epochs 
