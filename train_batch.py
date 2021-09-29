@@ -161,12 +161,13 @@ for optimizer_name in optimizers:
             print('Epoch: {}\tTrain Sec: {:0.3f}\tLoss: {:.3f}\tAcc: {:.3f}\tVal Acc: {:.3f}'
                     .format(epoch, elapsed, np.mean(loss.item()), np.mean(accuracy), val_accuracy))
 
-    # Save the model weights.
-    torch.save({
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'epoch': epoch,
-            'steps': step,
-            'lr': current_lr
-        }, save_model_path + "/" + session_id+".pt")
+        # Save the model weights.
+        torch.save({
+                'model_state_dict': model.state_dict(),
+                # 'optimizer_state_dict': optimizer.state_dict(),
+                'epoch': epoch,
+                'steps': step,
+                'lr': current_lr
+            }, f"{save_model_path}/{session_id}_{epoch}.pt")
+            
     writer.flush()
