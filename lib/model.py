@@ -11,7 +11,7 @@ class MnistModel(nn.Module):
     def __init__(self, n_filters1=64,
             n_filters2=64,
             n_fc=256,
-            dropout=False):
+            dropout=False, output_logits=False):
 
         super(MnistModel, self).__init__()
 
@@ -19,6 +19,7 @@ class MnistModel(nn.Module):
         self.n_filters2 = n_filters2
         self.n_fc = n_fc
         self.dropout = dropout
+        self.output_logits = output_logits
 
         # input is 28x28
         # padding=2 for same padding
@@ -37,6 +38,10 @@ class MnistModel(nn.Module):
         x = F.relu(self.fc1(x))
         if self.dropout: x = F.dropout(x, training=self.training)
         x = self.fc2(x)
+        
+        if self.output_logits:
+            return x
+        
         return F.log_softmax(x, dim=1)
 
 class NotMnist(Dataset):

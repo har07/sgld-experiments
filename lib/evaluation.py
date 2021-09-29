@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-from torch.autograd import Variable
 
 def evaluate(model, test_loader):
     model.eval()
@@ -18,8 +17,6 @@ def evaluate(model, test_loader):
             accuracies.append(val_accuracy)
         
     return np.mean(accuracies), output
-    
-    
     
 
 class BatchEvaluator:
