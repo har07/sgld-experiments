@@ -104,8 +104,8 @@ def ResNet18():
     return ResNet(BasicBlock, [2, 2, 2, 2])
 
 
-def ResNet34():
-    return ResNet(BasicBlock, [3, 4, 6, 3])
+def ResNet34(output_logits=False):
+    return ResNet(BasicBlock, [3, 4, 6, 3], output_logits=output_logits)
 
 
 def ResNet50():

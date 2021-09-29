@@ -99,8 +99,8 @@ for M in M_values:
                 false_prob_values[x_2_i, x_1_i] = mean_prob_vector[0]
 
         # save logits, softmaxes and labels:
-        logits = torch.cat(logits_list).cpu().numpy()
-        labels = torch.cat(labels_list).cpu().numpy()
+        logits = torch.cat(logits_list.cpu().numpy())
+        labels = torch.cat(labels_list.cpu().numpy())
         save_logits_path = "%s/logits_softmax_M_%d_%d.pth" % (network.model_dir, M, iter+1)
         torch.save({
             'logits': logits,
