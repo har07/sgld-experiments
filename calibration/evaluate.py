@@ -120,10 +120,10 @@ for path in paths:
 
     conf_hist = visualization.ConfidenceHistogram()
     plt_test = conf_hist.plot(logits_np,labels_np,title="Confidence Histogram")
-    plt_test.savefig('plots/conf_histogram_test.png',bbox_inches='tight')
+    plt_test.savefig('plots/%s_conf_histogram_test.png' % optimizer, bbox_inches='tight')
     #plt_test.show()
 
     rel_diagram = visualization.ReliabilityDiagram()
     plt_test_2 = rel_diagram.plot(logits_np,labels_np,title="Reliability Diagram")
-    plt_test_2.savefig('plots/rel_diagram_test.png',bbox_inches='tight')
+    plt_test_2.savefig('plots/%s_rel_diagram_test.png' % optimizer, bbox_inches='tight')
     #plt_test_2.show()
