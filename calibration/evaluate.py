@@ -3,6 +3,7 @@ import sys
 import random
 import numpy as np
 from scipy.special import softmax
+from torch import optim
 from torch.nn import functional as F
 import argparse
 import os
@@ -19,10 +20,6 @@ import model.resnet as resnet
 seed = 1
 train_batch=200
 test_batch=200
-# trained='optim.SGD_20210829_071116.pt'
-# PATH = '/content/drive/MyDrive/Tesis/langevin/azureml_20210829/result_cifar10/' + trained
-# trained='optim.SGD_20210829_131734.pt'
-# PATH = '/content/drive/MyDrive/Tesis/langevin/azureml_20210829/result_mnist/' + trained
 
 parser = argparse.ArgumentParser(
                     description="Evaluate confidence calibration of neural network for ")
@@ -30,13 +27,13 @@ parser.add_argument("-d", "--dir",
                     help="directory location containing pretrained models")
 parser.add_argument("-m", "--model",
                     help="model architecture")
-parser.add_argument("-o", "--optim", default="",
+parser.add_argument("-o", "--optimizer", default="",
                     help="optimizer")
 
 args = parser.parse_args()
 dir_path = str(args.dir)
 model_arch = str(args.model)
-optim = str(args.optim)
+optimizer = str(args.optimizer)
 
 torch.cuda.set_device(0)
 torch.manual_seed(seed)
@@ -53,11 +50,10 @@ else:
     _, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
 
 sub_path = "/*"
-if optim != "":
-    sub_path = f"/*.{optim}_*"
-if optim == "SGD1":
-    optim = "SGD"
-    sub_path = f"/*.{optim}_*_10.pt" # only get the final model
+if optimizer != "":
+    sub_path = f"/*.{optimizer}_*"
+if optimizer == "SGD1":
+    sub_path = f"/*.SGD_*_10.pt" # only get the final model
 paths = glob.glob(dir_path + sub_path)
 print("path pattern: ", dir_path + sub_path)
 print("paths: ", paths)
@@ -65,10 +61,6 @@ print("paths: ", paths)
 models = []
 mean_pred = np.zeros((2,))
 for path in paths:
-    file_name = os.path.basename(path)
-    # this assume pretrained file name follows this format: optim.SGD_20210829_071116.pt
-    optimizer = file_name.split(".")[1].split("_")[0]
-
     # print("pretrained path: ", path)
     chk = torch.load(path)
     model.load_state_dict(chk['model_state_dict'])
@@ -133,12 +125,18 @@ labels_np = labels.numpy()
 
 # print('pred_probs_np len: ', len(pred_probs_np))
 # print('labels_np len:', len(labels_np))
-print('ECE: %f' % (ece_criterion.loss(pred_probs_np,labels_np, 15)))
-print('ECE Softmax: %f' % (ece_criterion.loss(pred_probs_soft_np,labels_np, 15, logits=False)))
+# print('ECE: %f' % (ece_criterion.loss(pred_probs_np,labels_np, 15)))
+ece_score = ece_criterion.loss(pred_probs_soft_np,labels_np, 15, logits=False)
+print('ECE Softmax: %f' % (ece_score))
 
 mce_criterion = metrics.MCELoss()
-print('MCE: %f' % (mce_criterion.loss(pred_probs_np,labels_np)))
-print('MCE Softmax: %f' % (mce_criterion.loss(pred_probs_soft_np,labels_np, logits=False)))
+# print('MCE: %f' % (mce_criterion.loss(pred_probs_np,labels_np)))
+mce_score = mce_criterion.loss(pred_probs_soft_np,labels_np, logits=False)
+print('MCE Softmax: %f' % (mce_score))
+
+with open(f"plots/{optimizer}_metrics.txt", 'w') as f:
+    f.write(f"ECE Softmax: {ece_score}")
+    f.write(f"MCE Softmax: {mce_score}")
 
 ############
 #visualizations
