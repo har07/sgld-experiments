@@ -54,8 +54,13 @@ else:
 
 sub_path = "/*"
 if optim != "":
-    sub_path = f"/*.{optim.upper()}_*"
+    sub_path = f"/*.{optim}_*"
+if optim == "SGD1":
+    optim = "SGD"
+    sub_path = f"/*.{optim}_*_10.pt" # only get the final model
 paths = glob.glob(dir_path + sub_path)
+print("path pattern: ", dir_path + sub_path)
+print("paths: ", paths)
 
 models = []
 mean_pred = np.zeros((2,))
@@ -64,7 +69,7 @@ for path in paths:
     # this assume pretrained file name follows this format: optim.SGD_20210829_071116.pt
     optimizer = file_name.split(".")[1].split("_")[0]
 
-    print("pretrained path: ", path)
+    # print("pretrained path: ", path)
     chk = torch.load(path)
     model.load_state_dict(chk['model_state_dict'])
 
@@ -114,8 +119,7 @@ with torch.no_grad():
     labels = torch.cat(labels_list)
 
 print("Calculate calibration for network trained using ", optimizer)
-print('Accuracy of the network on the test images: %d %%' % (
-    100 * correct / total))
+print(f"Accuracy of the network on the test images: {100 * correct / total:.2f}")
 print(total)
 
 ################
@@ -130,11 +134,11 @@ labels_np = labels.numpy()
 # print('pred_probs_np len: ', len(pred_probs_np))
 # print('labels_np len:', len(labels_np))
 print('ECE: %f' % (ece_criterion.loss(pred_probs_np,labels_np, 15)))
-print('ECE Softmax: %f' % (ece_criterion.loss(pred_probs_soft_np,labels_np, 15, False)))
+print('ECE Softmax: %f' % (ece_criterion.loss(pred_probs_soft_np,labels_np, 15, logits=False)))
 
 mce_criterion = metrics.MCELoss()
 print('MCE: %f' % (mce_criterion.loss(pred_probs_np,labels_np)))
-print('MCE Softmax: %f' % (mce_criterion.loss(pred_probs_soft_np,labels_np, False)))
+print('MCE Softmax: %f' % (mce_criterion.loss(pred_probs_soft_np,labels_np, logits=False)))
 
 ############
 #visualizations
