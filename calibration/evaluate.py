@@ -29,11 +29,15 @@ parser.add_argument("-m", "--model",
                     help="model architecture")
 parser.add_argument("-o", "--optimizer", default="",
                     help="optimizer")
+parser.add_argument("-n", "--nmodel", default=10,
+                    help="number of models")
 
 args = parser.parse_args()
 dir_path = str(args.dir)
 model_arch = str(args.model)
 optimizer = str(args.optimizer)
+nmodel = int(args.nmodel)
+nmodel_max = 10
 
 torch.cuda.set_device(0)
 torch.manual_seed(seed)
@@ -49,19 +53,16 @@ else:
     model = model.cuda()
     _, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
 
-sub_path = "/*"
-if optimizer != "":
-    sub_path = f"/*.{optimizer}_*"
-if optimizer == "SGD1":
-    sub_path = f"/*.SGD_*_10.pt" # only get the final model
-paths = glob.glob(dir_path + sub_path)
-print("path pattern: ", dir_path + sub_path)
-print("paths: ", paths)
-
 models = []
 mean_pred = np.zeros((2,))
-for path in paths:
-    # print("pretrained path: ", path)
+path_idxs = [i for i in range(nmodel_max, nmodel_max-nmodel, -1)]
+# path_idxs = sorted(path_idxs, key=str)
+path_idxs = sorted(path_idxs)
+for path_idx in path_idxs:
+    path_glob = dir_path + f"/*.{optimizer}_*_{path_idx}.pt"
+    # print("pretrained path glob: ", path_glob)
+    path = glob.glob(path_glob)[0]
+    print("pretrained path: ", path)
     chk = torch.load(path)
     model.load_state_dict(chk['model_state_dict'])
 
@@ -85,8 +86,8 @@ with torch.no_grad():
         for model in models:
             logits = model(data)
             prob_vecs = F.softmax(logits,dim=1) # (200, 10); (batch_size, num_class)
-            mean_pred += logits/float(len(paths)) # (200, 10)
-            mean_pred_soft += prob_vecs/float(len(paths)) # (200, 10)
+            mean_pred += logits/float(nmodel) # (200, 10)
+            mean_pred_soft += prob_vecs/float(nmodel) # (200, 10)
 
         pred_probs_list.append(mean_pred.cpu())
         pred_probs_list_soft.append(mean_pred_soft.cpu())
@@ -110,7 +111,7 @@ with torch.no_grad():
     pred_probs_soft = torch.cat(pred_probs_list_soft)
     labels = torch.cat(labels_list)
 
-print("Calculate calibration for network trained using ", optimizer)
+print(f"Calculate calibration for network trained using {optimizer} {nmodel} models")
 print(f"Accuracy of the network on the test images: {100 * correct / total:.2f}")
 print(total)
 
@@ -134,7 +135,7 @@ mce_criterion = metrics.MCELoss()
 mce_score = mce_criterion.loss(pred_probs_soft_np,labels_np, logits=False)
 print('MCE Softmax: %f' % (mce_score))
 
-with open(f"plots/{optimizer}_metrics.txt", 'w') as f:
+with open(f"plots/{optimizer}_metrics_{nmodel}models.txt", 'w') as f:
     f.write(f"ECE Softmax: {ece_score}")
     f.write(f"MCE Softmax: {mce_score}")
 
@@ -142,42 +143,15 @@ with open(f"plots/{optimizer}_metrics.txt", 'w') as f:
 #visualizations
 
 conf_hist = visualization.ConfidenceHistogram()
-plt_test = conf_hist.plot(pred_probs_np,labels_np,title="Confidence Histogram")
-plt_test.savefig('plots/%s_conf_histogram_test.png' % optimizer, bbox_inches='tight')
-plt_test_soft = conf_hist.plot(pred_probs_soft_np,labels_np,title="Confidence Histogram Softmax",logits=False)
-plt_test_soft.savefig('plots/%s_conf_histogram_test_soft.png' % optimizer, bbox_inches='tight')
-#plt_test.show()
+# plt_test = conf_hist.plot(pred_probs_np,labels_np,title="Confidence Histogram")
+# plt_test.savefig('plots/%s_conf_histogram_test.png' % optimizer, bbox_inches='tight')
+plt_test_soft = conf_hist.plot(pred_probs_soft_np,labels_np,title="Confidence Histogram",logits=False)
+plt_test_soft.savefig(f"plots/{optimizer}_conf_histogram_{nmodel}models.png", bbox_inches='tight')
+plt_test_soft.show()
 
 rel_diagram = visualization.ReliabilityDiagram()
-plt_test_2 = rel_diagram.plot(pred_probs_np,labels_np,title="Reliability Diagram")
-plt_test_2.savefig('plots/%s_rel_diagram_test.png' % optimizer, bbox_inches='tight')
-plt_test_2_soft = rel_diagram.plot(pred_probs_soft_np,labels_np,title="Reliability Diagram Softmax",logits=False)
-plt_test_2_soft.savefig('plots/%s_rel_diagram_test_soft.png' % optimizer, bbox_inches='tight')
-#plt_test_2.show()
-
-# #Torch version
-# logits_np = logits.cpu().numpy()
-# labels_np = labels.cpu().numpy()
-
-# #Numpy Version
-# print('ECE: %f' % (ece_criterion.loss(logits_np,labels_np, 15)))
-
-# softmaxes = softmax(logits_np, axis=1)
-
-# print('ECE with probabilties %f' % (ece_criterion.loss(softmaxes,labels_np,15,False)))
-
-# mce_criterion = metrics.MCELoss()
-# print('MCE: %f' % (mce_criterion.loss(logits_np,labels_np)))
-
-# ############
-# #visualizations
-
-# conf_hist = visualization.ConfidenceHistogram()
-# plt_test = conf_hist.plot(logits_np,labels_np,title="Confidence Histogram")
-# plt_test.savefig('plots/%s_conf_histogram_test.png' % optimizer, bbox_inches='tight')
-# #plt_test.show()
-
-# rel_diagram = visualization.ReliabilityDiagram()
-# plt_test_2 = rel_diagram.plot(logits_np,labels_np,title="Reliability Diagram")
+# plt_test_2 = rel_diagram.plot(pred_probs_np,labels_np,title="Reliability Diagram")
 # plt_test_2.savefig('plots/%s_rel_diagram_test.png' % optimizer, bbox_inches='tight')
-# #plt_test_2.show()
+plt_test_2_soft = rel_diagram.plot(pred_probs_soft_np,labels_np,title="Reliability Diagram",logits=False)
+plt_test_2_soft.savefig(f"plots/{optimizer}_rel_diagram_{nmodel}models.png", bbox_inches='tight')
+plt_test_2_soft.show()
