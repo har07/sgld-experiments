@@ -127,9 +127,10 @@ print('MCE Softmax: %f' % (mce_score))
 nll = np.mean(loss_list)
 print(f"NLL: {nll}")
 
-with open(f"plots/{optimizer}_metrics_{nmodel}models.txt", 'w') as f:
-    f.write(f"ECE Softmax: {ece_score}")
-    f.write(f"MCE Softmax: {mce_score}")
+with open(f"plots/{model_arch}_{optimizer}_metrics_{nmodel}models.txt", 'w') as f:
+    f.write(f"{optimizer} {nmodel} models:\n")
+    f.write(f"ECE Softmax: {ece_score}\n")
+    f.write(f"MCE Softmax: {mce_score}\n")
     f.write(f"NLL: {nll}\n")
     f.write(f"Accuracy: {val_acc}\n")
 
@@ -137,11 +138,11 @@ with open(f"plots/{optimizer}_metrics_{nmodel}models.txt", 'w') as f:
 #visualizations
 
 conf_hist = visualization.ConfidenceHistogram()
-plt_test_soft = conf_hist.plot(pred_probs_soft_np,labels_np,title="Confidence Histogram",logits=False)
-plt_test_soft.savefig(f"plots/{optimizer}_conf_histogram_{nmodel}models.png", bbox_inches='tight')
+plt_test_soft = conf_hist.plot(pred_probs_soft_np,labels_np,title=f"",logits=False)
+plt_test_soft.savefig(f"plots/{model_arch}_{optimizer}_conf_histogram_{nmodel}models.png", bbox_inches='tight')
 plt_test_soft.show()
 
 rel_diagram = visualization.ReliabilityDiagram()
-plt_test_2_soft = rel_diagram.plot(pred_probs_soft_np,labels_np,title="Reliability Diagram",logits=False)
-plt_test_2_soft.savefig(f"plots/{optimizer}_rel_diagram_{nmodel}models.png", bbox_inches='tight')
+plt_test_2_soft = rel_diagram.plot(pred_probs_soft_np,labels_np,title=f"ECE={ece_score}",logits=False)
+plt_test_2_soft.savefig(f"plots/{model_arch}_{optimizer}_rel_diagram_{nmodel}models.png", bbox_inches='tight')
 plt_test_2_soft.show()
