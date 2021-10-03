@@ -82,15 +82,17 @@ with torch.no_grad():
         target = target.cuda()
 
         mean_pred_soft = torch.zeros(len(data), 10).cuda()
+        mean_log_soft = torch.zeros(len(data), 10).cuda()
         for model in models:
             logits = model(data)
             prob_vecs = F.softmax(logits,dim=1) # (200, 10); (batch_size, num_class)
             mean_pred_soft += prob_vecs/float(nmodel) # (200, 10)
-            loss = F.nll_loss(F.log_softmax(logits,dim=1), target)
-            loss_list.append(loss.cpu().numpy())
+            mean_log_soft += F.log_softmax(logits,dim=1)/float(nmodel)
 
         pred_probs.append(mean_pred_soft.cpu())
         data_labels.append(target.cpu())
+        loss = F.nll_loss(mean_log_soft, target)
+        loss_list.append(loss.cpu().numpy())
         
 
         #total
