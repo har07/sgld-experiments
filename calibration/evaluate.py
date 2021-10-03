@@ -70,9 +70,11 @@ for path_idx in path_idxs:
     models.append(model)
 
 accuracies = []
+pred_class_list = []
 pred_probs_list = []
 pred_probs_list_soft = []
 labels_list = []
+loss_list = []
 correct = 0
 total = 0
 
@@ -88,6 +90,8 @@ with torch.no_grad():
             prob_vecs = F.softmax(logits,dim=1) # (200, 10); (batch_size, num_class)
             mean_pred += logits/float(nmodel) # (200, 10)
             mean_pred_soft += prob_vecs/float(nmodel) # (200, 10)
+            loss = F.nll_loss(F.log_softmax(logits,dim=1), labels)
+            loss_list.append(loss.cpu().numpy())
 
         pred_probs_list.append(mean_pred.cpu())
         pred_probs_list_soft.append(mean_pred_soft.cpu())
@@ -104,6 +108,7 @@ with torch.no_grad():
 
         #total
         pred = mean_pred_soft.data.max(1)[1] 
+        pred_class_list.append(pred.cpu().numpy())
         total += labels.size(0)
         correct += (pred == labels).sum().item()
 
@@ -112,7 +117,8 @@ with torch.no_grad():
     labels = torch.cat(labels_list)
 
 print(f"Calculate calibration for network trained using {optimizer} {nmodel} models")
-print(f"Accuracy of the network on the test images: {100 * correct / total:.2f}")
+val_acc = 100 * correct / total
+print(f"Accuracy of the network on the test images: {val_acc:.2f}")
 print(total)
 
 ################
@@ -124,20 +130,21 @@ pred_probs_np = pred_probs.numpy()
 pred_probs_soft_np = pred_probs_soft.numpy()
 labels_np = labels.numpy()
 
-# print('pred_probs_np len: ', len(pred_probs_np))
-# print('labels_np len:', len(labels_np))
-# print('ECE: %f' % (ece_criterion.loss(pred_probs_np,labels_np, 15)))
 ece_score = ece_criterion.loss(pred_probs_soft_np,labels_np, 15, logits=False)
 print('ECE Softmax: %f' % (ece_score))
 
 mce_criterion = metrics.MCELoss()
-# print('MCE: %f' % (mce_criterion.loss(pred_probs_np,labels_np)))
 mce_score = mce_criterion.loss(pred_probs_soft_np,labels_np, logits=False)
 print('MCE Softmax: %f' % (mce_score))
+
+nll = np.mean(loss_list)
+print(f"NLL: {nll}")
 
 with open(f"plots/{optimizer}_metrics_{nmodel}models.txt", 'w') as f:
     f.write(f"ECE Softmax: {ece_score}")
     f.write(f"MCE Softmax: {mce_score}")
+    f.write(f"NLL: {nll}\n")
+    f.write(f"Accuracy: {val_acc}\n")
 
 ############
 #visualizations
