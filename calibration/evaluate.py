@@ -54,7 +54,6 @@ else:
     _, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
 
 models = []
-mean_pred = np.zeros((2,))
 path_idxs = [i for i in range(nmodel_max, nmodel_max-nmodel, -1)]
 # path_idxs = sorted(path_idxs, key=str)
 path_idxs = sorted(path_idxs)
@@ -71,9 +70,8 @@ for path_idx in path_idxs:
 
 accuracies = []
 pred_class_list = []
-pred_probs_list = []
-pred_probs_list_soft = []
-labels_list = []
+pred_probs = []
+data_labels = []
 loss_list = []
 correct = 0
 total = 0
@@ -81,40 +79,28 @@ total = 0
 with torch.no_grad():
     for data, target in test_loader:
         data = data.cuda()
-        labels = target.cuda()
+        target = target.cuda()
 
-        mean_pred = torch.zeros(len(data), 10).cuda()
         mean_pred_soft = torch.zeros(len(data), 10).cuda()
         for model in models:
             logits = model(data)
             prob_vecs = F.softmax(logits,dim=1) # (200, 10); (batch_size, num_class)
-            mean_pred += logits/float(nmodel) # (200, 10)
             mean_pred_soft += prob_vecs/float(nmodel) # (200, 10)
-            loss = F.nll_loss(F.log_softmax(logits,dim=1), labels)
+            loss = F.nll_loss(F.log_softmax(logits,dim=1), target)
             loss_list.append(loss.cpu().numpy())
 
-        pred_probs_list.append(mean_pred.cpu())
-        pred_probs_list_soft.append(mean_pred_soft.cpu())
-        labels_list.append(labels.cpu())
+        pred_probs.append(mean_pred_soft.cpu())
+        data_labels.append(target.cpu())
         
-        # pred_probs = mean_pred.data.max(1)[0] # (200); prob score of predicted class
-        # pred = mean_pred.data.max(1)[1] # (200); predicted class index
-
-        # pred_probs_list.append(pred_probs.cpu())
-        # labels_list.append(labels.cpu())
-        # val_accuracy = np.mean(pred.eq(labels.data).cpu().numpy())*100
-        
-        # accuracies.append(val_accuracy)
 
         #total
         pred = mean_pred_soft.data.max(1)[1] 
         pred_class_list.append(pred.cpu().numpy())
-        total += labels.size(0)
-        correct += (pred == labels).sum().item()
+        total += target.size(0)
+        correct += (pred == target).sum().item()
 
-    pred_probs = torch.cat(pred_probs_list)
-    pred_probs_soft = torch.cat(pred_probs_list_soft)
-    labels = torch.cat(labels_list)
+    pred_probs_soft = torch.cat(pred_probs)
+    target = torch.cat(data_labels)
 
 print(f"Calculate calibration for network trained using {optimizer} {nmodel} models")
 val_acc = 100 * correct / total
@@ -126,9 +112,8 @@ print(total)
 
 ece_criterion = metrics.ECELoss()
 
-pred_probs_np = pred_probs.numpy()
 pred_probs_soft_np = pred_probs_soft.numpy()
-labels_np = labels.numpy()
+labels_np = target.numpy()
 
 ece_score = ece_criterion.loss(pred_probs_soft_np,labels_np, 15, logits=False)
 print('ECE Softmax: %f' % (ece_score))
@@ -150,15 +135,11 @@ with open(f"plots/{optimizer}_metrics_{nmodel}models.txt", 'w') as f:
 #visualizations
 
 conf_hist = visualization.ConfidenceHistogram()
-# plt_test = conf_hist.plot(pred_probs_np,labels_np,title="Confidence Histogram")
-# plt_test.savefig('plots/%s_conf_histogram_test.png' % optimizer, bbox_inches='tight')
 plt_test_soft = conf_hist.plot(pred_probs_soft_np,labels_np,title="Confidence Histogram",logits=False)
 plt_test_soft.savefig(f"plots/{optimizer}_conf_histogram_{nmodel}models.png", bbox_inches='tight')
 plt_test_soft.show()
 
 rel_diagram = visualization.ReliabilityDiagram()
-# plt_test_2 = rel_diagram.plot(pred_probs_np,labels_np,title="Reliability Diagram")
-# plt_test_2.savefig('plots/%s_rel_diagram_test.png' % optimizer, bbox_inches='tight')
 plt_test_2_soft = rel_diagram.plot(pred_probs_soft_np,labels_np,title="Reliability Diagram",logits=False)
 plt_test_2_soft.savefig(f"plots/{optimizer}_rel_diagram_{nmodel}models.png", bbox_inches='tight')
 plt_test_2_soft.show()
