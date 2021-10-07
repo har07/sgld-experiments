@@ -72,6 +72,7 @@ print('decay size: ', block_size, ', decay rate: ', block_decay)
 print('train batch size: ', train_batch, ', test batch size: ', test_batch)
 
 optimizers = config['optimizers']
+durations = []
 for optimizer_name in optimizers:
     if dataset_name == "MNIST":
         model = lib.model.MnistModel()
@@ -143,6 +144,7 @@ for optimizer_name in optimizers:
 
         # measure training time
         elapsed = time.time() - t0
+        durations.append(elapsed)
 
         # update learning rate for next epoch
         if block_size > 0 and block_decay > 0 and ((epoch) % block_size) == 0:
@@ -171,3 +173,4 @@ for optimizer_name in optimizers:
             }, f"{save_model_path}/{session_id}_{epoch}.pt")
             
     writer.flush()
+    print(f"Mean epoch duration: {np.mean(durations):.2f}")
