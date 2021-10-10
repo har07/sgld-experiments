@@ -49,7 +49,8 @@ if model_arch == "mnist":
     model = model.cuda()
     _, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
 else:
-    model = resnet.ResNet34(output_logits=True)
+    # model = resnet.ResNet34(output_logits=True)
+    model = resnet.ResNet18(output_logits=True)
     model = model.cuda()
     _, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
 

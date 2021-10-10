@@ -100,8 +100,8 @@ class ResNet(nn.Module):
         return F.log_softmax(out, dim=1)
 
 
-def ResNet18():
-    return ResNet(BasicBlock, [2, 2, 2, 2])
+def ResNet18(output_logits=False):
+    return ResNet(BasicBlock, [2, 2, 2, 2], output_logits=output_logits)
 
 
 def ResNet34(output_logits=False):
