@@ -1,1 +1,1 @@
-Taken from: https://github.com/Jonathan-Pearce/calibration_library
+temperature_scaling.py is from https://github.com/gpleiss/temperature_scaling and the rest are from https://github.com/Jonathan-Pearce/calibration_library.
