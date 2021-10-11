@@ -31,10 +31,13 @@ parser.add_argument("-o", "--optimizer", default="",
                     help="optimizer")
 parser.add_argument("-n", "--nmodel", default=10,
                     help="number of models")
+parser.add_argument("-ds", "--dataset",
+                    help="dataset")
 
 args = parser.parse_args()
 dir_path = str(args.dir)
 model_arch = str(args.model)
+dataset = str(args.dataset)
 optimizer = str(args.optimizer)
 nmodel = int(args.nmodel)
 nmodel_max = 10
@@ -44,13 +47,14 @@ torch.manual_seed(seed)
 random.seed(seed)
 np.random.seed(seed)
 
-if model_arch == "mnist":
+if dataset == "mnist":
     model = lib.model.MnistModel(output_logits=True)
     model = model.cuda()
     _, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
 else:
     # model = resnet.ResNet34(output_logits=True)
-    model = resnet.ResNet18(output_logits=True)
+    # model = resnet.ResNet18(output_logits=True)
+    model = eval(model_arch)(output_logits=True)
     model = model.cuda()
     _, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
 

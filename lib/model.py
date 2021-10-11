@@ -70,8 +70,9 @@ class NotMnist(Dataset):
         return image
 
 class LeNet(nn.Module):
-    def __init__(self):
+    def __init__(self, output_logits=False):
         super(LeNet, self).__init__()
+        self.output_logits = output_logits
         self.conv1 = nn.Conv2d(3, 6, kernel_size=5)
         self.conv2 = nn.Conv2d(6, 16, kernel_size=5)
         self.fc1 = nn.Linear(16*5*5, 120)
@@ -87,7 +88,11 @@ class LeNet(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
-        return x
+        
+        if self.output_logits:
+            return x
+        
+        return F.log_softmax(x, dim=1)
 
 # this class is taken from: https://github.com/fregu856/evaluating_bdl/blob/master/toyClassification/SGLD-64/model.py
 class ToyNet(nn.Module):
