@@ -58,7 +58,7 @@ block_decay = config['block_decay']
 
 dataset_params = config['dataset']
 dataset_name = dataset_params['name']
-if dataset_name not in ['MNIST','CIFAR10']:
+if dataset_name not in ['MNIST','CIFAR10','CIFAR100']:
     raise NotImplementedError
 train_batch = dataset_params['train_batch']
 test_batch = dataset_params['test_batch']
