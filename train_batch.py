@@ -173,4 +173,4 @@ for optimizer_name in optimizers:
             }, f"{save_model_path}/{session_id}_{epoch}.pt")
             
     writer.flush()
-    print(f"Mean epoch duration: {np.mean(durations):.2f}")
+    print(f"epoch duration (mean +/- std): {np.mean(durations):.2f} +/- {np.std(durations):.2f}")
