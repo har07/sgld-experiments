@@ -33,7 +33,7 @@ default_none = "None"
 
 parser = argparse.ArgumentParser(
                     description="Trains and saves neural network for "
-                                "MNIST/CIFAR10 classification.")
+                                "MNIST/CIFAR10/CIFAR100 classification.")
 parser.add_argument("-y", "--yaml",
                     help="yaml config file location",
                     default=default_yaml)
@@ -77,10 +77,14 @@ for optimizer_name in optimizers:
     if dataset_name == "MNIST":
         model = lib.model.MnistModel()
         train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
-    else:
+    elif dataset_name == "CIFAR10":
         model_name = config['model']
         model = eval(model_name)()
         train_loader, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
+    else:
+        model_name = config['model']
+        model = eval(model_name)()
+        train_loader, test_loader = lib.dataset.make_datasets_cifar100(bs=train_batch, test_bs=test_batch)
         
     model = model.cuda()
 

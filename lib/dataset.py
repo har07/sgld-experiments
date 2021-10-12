@@ -59,6 +59,30 @@ def make_datasets_cifar10(bs=128, test_bs=100):
 
     return train_loader, test_loader
 
+def make_datasets_cifar100(bs=128, test_bs=100, shuffle=True):
+    CIFAR100_TRAIN_MEAN = (0.5070751592371323, 0.48654887331495095, 0.4409178433670343)
+    CIFAR100_TRAIN_STD = (0.2673342858792401, 0.2564384629170883, 0.27615047132568404)
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(15),
+        transforms.ToTensor(),
+        transforms.Normalize(CIFAR100_TRAIN_MEAN, CIFAR100_TRAIN_STD)
+    ])
+    cifar100_training = datasets.CIFAR100(root='cifar100_data', train=True, download=True, transform=transform_train)
+    cifar100_training_loader = torch.utils.data.DataLoader(
+        cifar100_training, shuffle=shuffle, batch_size=bs)
+
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(CIFAR100_TRAIN_MEAN, CIFAR100_TRAIN_STD)
+    ])
+    cifar100_test = datasets.CIFAR100(root='cifar100_data', train=False, download=True, transform=transform_test)
+    cifar100_test_loader = torch.utils.data.DataLoader(
+        cifar100_test, shuffle=shuffle, batch_size=test_bs)
+
+    return cifar100_training_loader, cifar100_test_loader
+
 def _get_simultan_subsets_loader(trainset, batch_size):
     n_per_class = 6000
     skip = 4000
