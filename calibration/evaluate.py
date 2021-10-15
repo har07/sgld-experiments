@@ -11,6 +11,7 @@ import glob
 
 import metrics
 import visualization
+import auc_mu
 
 sys.path.insert(1, '../')
 import lib.model
@@ -122,6 +123,9 @@ ece_criterion = metrics.ECELoss()
 pred_probs_soft_np = pred_probs_soft.numpy()
 labels_np = target.numpy()
 
+auc_mu_score = auc_mu.auc_mu(labels_np, pred_probs_soft_np)
+print('AUCmu: %f' % (auc_mu_score))
+
 ece_score = ece_criterion.loss(pred_probs_soft_np,labels_np, 15, logits=False)
 print('ECE Softmax: %f' % (ece_score))
 
@@ -134,6 +138,7 @@ print(f"NLL: {nll}")
 
 with open(f"plots/{model_arch}_{optimizer}_metrics_{nmodel}models.txt", 'w') as f:
     f.write(f"{optimizer} {nmodel} models:\n")
+    f.write(f"AUCmu: {auc_mu_score}\n")
     f.write(f"ECE Softmax: {ece_score}\n")
     f.write(f"MCE Softmax: {mce_score}\n")
     f.write(f"NLL: {nll}\n")
