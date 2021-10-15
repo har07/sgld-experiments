@@ -113,10 +113,10 @@ def auc_mu(y_true, y_score, A=None, W=None):
     
     auc_total = 0.0
     
-    for class_i in xrange(n_classes):
+    for class_i in range(n_classes):
         preds_i = y_score[y_true == class_i]
         n_i = preds_i.shape[0]
-        for class_j in xrange(class_i):
+        for class_j in range(class_i):
             
             preds_j = y_score[y_true == class_j]
             temp_preds = np.vstack((preds_i, preds_j))
