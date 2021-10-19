@@ -8,6 +8,7 @@ from torch.nn import functional as F
 import argparse
 import os
 import glob
+import math
 
 import metrics
 import visualization
@@ -34,6 +35,8 @@ parser.add_argument("-n", "--nmodel", default=10,
                     help="number of models")
 parser.add_argument("-ds", "--dataset",
                     help="dataset")
+parser.add_argument("-rotate", "--rotate", default=0,
+                    help="rotate data")
 
 args = parser.parse_args()
 dir_path = str(args.dir)
@@ -41,6 +44,7 @@ model_arch = str(args.model)
 dataset = str(args.dataset)
 optimizer = str(args.optimizer)
 nmodel = int(args.nmodel)
+rotate = int(args.rotate)
 nmodel_max = 10
 
 torch.cuda.set_device(0)
@@ -75,10 +79,10 @@ for path_idx in path_idxs:
     models.append(model)
 
 accuracies = []
-pred_class_list = []
-pred_probs = []
-data_labels = []
-loss_list = []
+pred_class_list = [] # list of class prediction
+pred_probs = [] # list of confidence value
+data_labels = [] # list of correct class
+loss_list = [] # list of per batch NLL loss
 correct = 0
 total = 0
 
@@ -86,6 +90,12 @@ with torch.no_grad():
     for data, target in test_loader:
         data = data.cuda()
         target = target.cuda()
+
+        if rotate > 0:
+            rotation_matrix = torch.Tensor([[[math.cos(rotate/360.0*2*math.pi), -math.sin(rotate/360.0*2*math.pi), 0],
+                                    [math.sin(rotate/360.0*2*math.pi), math.cos(rotate/360.0*2*math.pi), 0]]]).cuda()
+            grid = F.affine_grid(rotation_matrix, data.size())
+            data = F.grid_sample(data, grid)
 
         mean_pred_soft = torch.zeros(len(data), 10).cuda()
         mean_log_soft = torch.zeros(len(data), 10).cuda()
@@ -112,7 +122,7 @@ with torch.no_grad():
 
 print(f"Calculate calibration for network trained using {optimizer} {nmodel} models")
 val_acc = 100 * correct / total
-print(f"Accuracy of the network on the test images: {val_acc:.2f}")
+print(f"Accuracy of the network on the test images rotated {rotate} degree: {val_acc:.2f}")
 print(total)
 
 ################
