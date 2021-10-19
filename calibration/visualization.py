@@ -57,7 +57,9 @@ class ReliabilityDiagram(metrics.MaxProbCELoss):
 
         plt.rcParams["font.family"] = "serif"
         #size and axis limits
-        plt.figure(figsize=(3,3))
+        # TODO: use high-resolution
+        # https://stackoverflow.com/questions/332289/how-do-you-change-the-size-of-figures-drawn-with-matplotlib
+        plt.figure(figsize=(3,3), dpi=600)
         plt.xlim(0,1)
         plt.ylim(0,1)
         #plot grid
