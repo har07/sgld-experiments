@@ -6,6 +6,7 @@ import numpy as np
 from scipy.special import softmax
 from torch import optim
 from torch.nn import functional as F
+from torch.distributions import Categorical
 import argparse
 import os
 import glob
@@ -84,6 +85,7 @@ pred_class_list = [] # list of class prediction
 pred_probs = [] # list of confidence value
 data_labels = [] # list of correct class
 loss_list = [] # list of per batch NLL loss
+entropy_list = [] # list of prediction entropy value
 correct = 0
 total = 0
 
@@ -110,6 +112,7 @@ with torch.no_grad():
             mean_pred_soft += prob_vecs/float(nmodel) # (200, 10)
             mean_log_soft += F.log_softmax(logits,dim=1)/float(nmodel)
 
+        entropy_list.append(Categorical(probs = mean_pred_soft).entropy())
         pred_probs.append(mean_pred_soft.cpu())
         data_labels.append(target.cpu())
         loss = F.nll_loss(mean_log_soft, target)
@@ -118,7 +121,7 @@ with torch.no_grad():
 
         #total
         pred = mean_pred_soft.data.max(1)[1] 
-        pred_class_list.append(pred.cpu().numpy())
+        pred_class_list.append(pred.cpu())
         total += target.size(0)
         correct += (pred == target).sum().item()
 
@@ -133,20 +136,35 @@ print(total)
 ################
 #metrics
 
-ece_criterion = metrics.ECELoss()
-
 pred_probs_soft_np = pred_probs_soft.numpy()
 labels_np = target.numpy()
 
 auc_mu_score = auc_mu.auc_mu(labels_np, pred_probs_soft_np)
 print('AUCmu: %f' % (auc_mu_score))
 
+ece_criterion = metrics.ECELoss()
 ece_score = ece_criterion.loss(pred_probs_soft_np,labels_np, 15, logits=False)
-print('ECE Softmax: %f' % (ece_score))
+print('ECE: %f' % (ece_score))
 
 mce_criterion = metrics.MCELoss()
 mce_score = mce_criterion.loss(pred_probs_soft_np,labels_np, logits=False)
-print('MCE Softmax: %f' % (mce_score))
+print('MCE: %f' % (mce_score))
+
+sce_criterion = metrics.SCELoss()
+sce_score = sce_criterion.loss(pred_probs_soft_np,labels_np, logits=False)
+print('SCE: %f' % (sce_score))
+
+ace_criterion = metrics.ACELoss()
+ace_score = ace_criterion.loss(pred_probs_soft_np,labels_np, logits=False)
+print('ACE: %f' % (ace_score))
+
+tace_criterion = metrics.TACELoss()
+tace_score = tace_criterion.loss(pred_probs_soft_np,labels_np, logits=False)
+print('TACE: %f' % (ace_score))
+
+oe_criterion = metrics.OELoss()
+oe_score = oe_criterion.loss(pred_probs_soft_np,labels_np, logits=False)
+print('OE: %f' % (oe_score))
 
 nll = np.mean(loss_list)
 print(f"NLL: {nll}")
@@ -154,8 +172,13 @@ print(f"NLL: {nll}")
 with open(f"plots/{model_arch}_{optimizer}_metrics_{nmodel}models.txt", 'w') as f:
     f.write(f"{optimizer} {nmodel} models:\n")
     f.write(f"AUCmu: {auc_mu_score}\n")
-    f.write(f"ECE Softmax: {ece_score}\n")
-    f.write(f"MCE Softmax: {mce_score}\n")
+    f.write(f"ECE: {ece_score}\n")
+    f.write(f"MCE: {mce_score}\n")
+    f.write(f"SCE: {sce_score}\n")
+    f.write(f"ACE: {ace_score}\n")
+    f.write(f"TACE: {tace_score}\n")
+    f.write(f"OE: {oe_score}\n")
+    # f.write(f"Entropy: {mce_score}\n")
     f.write(f"NLL: {nll}\n")
     f.write(f"Accuracy: {val_acc}\n")
 
