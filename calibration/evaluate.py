@@ -97,6 +97,9 @@ with torch.no_grad():
             #                         [math.sin(rotate/360.0*2*math.pi), math.cos(rotate/360.0*2*math.pi), 0]]]).cuda()
             # grid = F.affine_grid(rotation_matrix, data.size())
             # data = F.grid_sample(data, grid)
+
+            # use torchvision transform instead, much simpler: 
+            # https://pytorch.org/vision/stable/transforms.html#functional-transforms
             data = TF.rotate(data, rotate)
 
         mean_pred_soft = torch.zeros(len(data), 10).cuda()

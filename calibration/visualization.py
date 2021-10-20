@@ -15,7 +15,7 @@ class ConfidenceHistogram(metrics.MaxProbCELoss):
 
         plt.rcParams["font.family"] = "serif"
         #size and axis limits 
-        plt.figure(figsize=(3,3))
+        plt.figure(figsize=(3,3), dpi=600)
         plt.xlim(0,1)
         plt.ylim(0,1)
         plt.xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], ['0.0', '0.2', '0.4', '0.6', '0.8', '1.0'])
