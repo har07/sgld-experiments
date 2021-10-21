@@ -71,6 +71,7 @@ np.random.seed(seed)
 print('decay size: ', block_size, ', decay rate: ', block_decay)
 print('train batch size: ', train_batch, ', test batch size: ', test_batch)
 
+f = open(save_model_path + '/train_logs.txt', 'w')
 optimizers = config['optimizers']
 durations = []
 for optimizer_name in optimizers:
@@ -106,6 +107,8 @@ for optimizer_name in optimizers:
     session_id = f"{optimizer_name}_{session_id}"
     print('optimizer: ', optimizer_name)
     print('optimizer params: ', optim_params)
+    f.write('optimizer: ' + optimizer_name + '\n')
+    f.write('optimizer params: ' + optim_params + '\n')
     if accept_model:
         optimizer = eval(optimizer_name)(model, **optim_params)
     else:
@@ -164,8 +167,9 @@ for optimizer_name in optimizers:
         writer.add_scalar("Duration", elapsed, epoch)
 
         if not silent:
-            print('Epoch: {}\tTrain Sec: {:0.3f}\tLoss: {:.3f}\tAcc: {:.3f}\tVal Acc: {:.3f}'
-                    .format(epoch, elapsed, np.mean(loss.item()), np.mean(accuracy), val_accuracy))
+            entry = f'Epoch: {epoch}\tTrain Sec: {elapsed:0.3f}\tLoss: {np.mean(loss.item()):.3f}\tAcc: {np.mean(accuracy):.3f}\tVal Acc: {val_accuracy:.3f}'
+            print(entry)
+            f.write(entry + '\n')
 
         # Save the model weights max for the last 20 epochs
         if epochs - epoch < 20:
@@ -179,3 +183,5 @@ for optimizer_name in optimizers:
             
     writer.flush()
     print(f"epoch duration (mean +/- std): {np.mean(durations):.2f} +/- {np.std(durations):.2f}")
+
+f.close()
