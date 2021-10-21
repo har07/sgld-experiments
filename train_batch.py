@@ -107,8 +107,8 @@ for optimizer_name in optimizers:
     session_id = f"{optimizer_name}_{session_id}"
     print('optimizer: ', optimizer_name)
     print('optimizer params: ', optim_params)
-    f.write('optimizer: ' + optimizer_name + '\n')
-    f.write('optimizer params: ' + optim_params + '\n')
+    print('optimizer: ', optimizer_name, file=f)
+    print('optimizer params: ', optim_params, file=f)
     if accept_model:
         optimizer = eval(optimizer_name)(model, **optim_params)
     else:
@@ -169,7 +169,7 @@ for optimizer_name in optimizers:
         if not silent:
             entry = f'Epoch: {epoch}\tTrain Sec: {elapsed:0.3f}\tLoss: {np.mean(loss.item()):.3f}\tAcc: {np.mean(accuracy):.3f}\tVal Acc: {val_accuracy:.3f}'
             print(entry)
-            f.write(entry + '\n')
+            print(entry, file=f)
 
         # Save the model weights max for the last 20 epochs
         if epochs - epoch < 20:
