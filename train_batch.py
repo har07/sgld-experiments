@@ -71,7 +71,8 @@ np.random.seed(seed)
 print('decay size: ', block_size, ', decay rate: ', block_decay)
 print('train batch size: ', train_batch, ', test batch size: ', test_batch)
 
-f = open(save_model_path + '/train_logs.txt', 'w')
+session_id_prefix = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+f = open(f'{save_model_path}/train_logs_{session_id_prefix}.txt', 'w')
 optimizers = config['optimizers']
 durations = []
 for optimizer_name in optimizers:
@@ -103,8 +104,7 @@ for optimizer_name in optimizers:
             if v or v == False:
                 optim_params[k] = v
 
-    session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    session_id = f"{optimizer_name}_{session_id}"
+    session_id = f"{optimizer_name}_{session_id_prefix}"
     print('optimizer: ', optimizer_name)
     print('optimizer params: ', optim_params)
     print('optimizer: ', optimizer_name, file=f)
@@ -123,6 +123,10 @@ for optimizer_name in optimizers:
     # check if optimizer.step has 'lr' param
     step_args = inspect.signature(optimizer.step)
     lr_param = 'lr' in step_args.parameters
+
+    # exception for SGD: do not perform lr decay
+    if optimizer_name == 'optim.SGD':
+        block_decay = 0
 
     val_accuracy=0
 
