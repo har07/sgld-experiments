@@ -187,5 +187,6 @@ for optimizer_name in optimizers:
             
     writer.flush()
     print(f"epoch duration (mean +/- std): {np.mean(durations):.2f} +/- {np.std(durations):.2f}")
+    print(f"epoch duration (mean +/- std): {np.mean(durations):.2f} +/- {np.std(durations):.2f}", file=f)
 
 f.close()
