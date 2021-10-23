@@ -2,7 +2,7 @@ seed: 1
 epoch: 10
 block_size: 20
 block_decay: .5
-model: lib.model.LeNet
+model: lib.model.LeNetMnist
 optimizers: ['ksgld.KSGLD','eksgld.EKSGLD','optim.SGD','sgld3.SGLD','psgld2.pSGLD','asgld.ASGLD']
 eksgld.EKSGLD:
   lr: 5.e-3
