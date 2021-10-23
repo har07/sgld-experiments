@@ -126,10 +126,6 @@ for optimizer_name in optimizers:
     step_args = inspect.signature(optimizer.step)
     lr_param = 'lr' in step_args.parameters
 
-    # exception for SGD: do not perform lr decay
-    if optimizer_name == 'optim.SGD':
-        block_decay = 0
-
     val_accuracy=0
 
     start_epoch = 1
@@ -146,7 +142,11 @@ for optimizer_name in optimizers:
             output = model(data)
             loss = F.nll_loss(output, target)
             loss.backward()
-            if block_size > 0 and block_decay > 0 and lr_param:
+
+            # exception for SGD: do not perform lr decay
+            if optimizer_name == 'optim.SGD':
+                block_decay = 0
+            elif block_size > 0 and block_decay > 0 and lr_param:
                 optimizer.step(lr=current_lr)
             else:
                 optimizer.step()
