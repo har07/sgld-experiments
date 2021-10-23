@@ -171,6 +171,7 @@ for optimizer_name in optimizers:
         writer.add_scalar("Acc/train", val_accuracy, epoch)
         writer.add_scalar("TAcc/train", np.mean(accuracy), epoch)
         writer.add_scalar("Duration", elapsed, epoch)
+        writer.add_scalar("Learning rate", current_lr, epoch)
 
         if not silent:
             entry = f'Epoch: {epoch}\tTrain Sec: {elapsed:0.3f}\tLoss: {np.mean(loss.item()):.3f}\tAcc: {np.mean(accuracy):.3f}\tVal Acc: {val_accuracy:.3f}'
