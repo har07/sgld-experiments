@@ -96,7 +96,7 @@ class LeNet(nn.Module):
 
 class LeNetMnist(nn.Module):
     def __init__(self, output_logits=False):
-        super(LeNet, self).__init__()
+        super(LeNetMnist, self).__init__()
         self.output_logits = output_logits
         self.conv1 = nn.Conv2d(1, 6, kernel_size=5)
         self.conv2 = nn.Conv2d(6, 16, kernel_size=5)
