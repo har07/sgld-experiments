@@ -77,7 +77,9 @@ optimizers = config['optimizers']
 durations = []
 for optimizer_name in optimizers:
     if dataset_name == "MNIST":
-        model = lib.model.MnistModel()
+        # model = lib.model.MnistModel()
+        model_name = config['model']
+        model = eval(model_name)()
         train_loader, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
     elif dataset_name == "CIFAR10":
         model_name = config['model']
