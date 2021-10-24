@@ -40,8 +40,8 @@ class NotMnist(Dataset):
         image = io.imread(self.filelist[idx])
         image = PIL.Image.fromarray(image)
         if self.transform:
-            return (self.transform(image), None)
-        return (image, None)
+            return (self.transform(image), [])
+        return (image, [])
 
 def make_datasets(bs=50, test_bs=4096, noise=0):
     train_loader = torch.utils.data.DataLoader(
@@ -115,7 +115,7 @@ def make_datasets_cifar100(bs=128, test_bs=100, shuffle=True):
 
 def make_datasets_notmnist(bs=128, test_bs=100, shuffle=True):
     notmnist_test_loader = torch.utils.data.DataLoader(NotMnist('notmnist_data',
-            transform=transforms.ToTensor()), batch_size=test_bs, shuffle=shuffle)
+            transform=transforms.Compose([transforms.ToTensor()])), batch_size=test_bs, shuffle=shuffle)
 
     return None, notmnist_test_loader
 
