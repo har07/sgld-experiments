@@ -72,8 +72,6 @@ for optimizer in optimizers:
         model = model.cuda()
         _, test_loader = lib.dataset.make_datasets(bs=train_batch, test_bs=test_batch)
     else:
-        # model = resnet.ResNet34(output_logits=True)
-        # model = resnet.ResNet18(output_logits=True)
         model = eval(model_arch)(output_logits=True)
         model = model.cuda()
         _, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
@@ -183,18 +181,6 @@ for optimizer in optimizers:
 
     print(f"{dataset}/{model_arch}\t{optimizer}\t{ece_score}\t{mce_score}\t{nll}\t{sce_score}\t{ace_score}\t" +
             f"{tace_score}\t{oe_score}\t{val_acc}\t{auc_mu_score}", file=f)
-    # with open(f"plots/{model_arch}_{optimizer}_metrics_{nmodel}models.txt", 'w') as f:
-    #     f.write(f"{optimizer} {nmodel} models:\n")
-    #     f.write(f"AUCmu: {auc_mu_score}\n")
-    #     f.write(f"ECE: {ece_score}\n")
-    #     f.write(f"MCE: {mce_score}\n")
-    #     f.write(f"SCE: {sce_score}\n")
-    #     f.write(f"ACE: {ace_score}\n")
-    #     f.write(f"TACE: {tace_score}\n")
-    #     f.write(f"OE: {oe_score}\n")
-    #     # f.write(f"Entropy: {mce_score}\n")
-    #     f.write(f"NLL: {nll}\n")
-    #     f.write(f"Accuracy: {val_acc}\n")
 
     ############
     #visualizations
