@@ -2,10 +2,14 @@ import torch.utils
 import random
 from torchvision import datasets, transforms
 from .preproc import NoiseTransform
-from .model import NotMnist
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+from skimage import io, transform
+import PIL
+from torch.utils.data import Dataset
+import glob
+import os
 
 # workaround for MNIST download problem: https://github.com/pytorch/vision/issues/1938#issuecomment-789986996
 from six.moves import urllib
@@ -13,6 +17,31 @@ opener = urllib.request.build_opener()
 opener.addheaders = [('User-agent', 'Mozilla/5.0')]
 urllib.request.install_opener(opener)
 # end workaround
+
+class NotMnist(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.filelist = glob.glob(os.path.join(self.root_dir, '**', '*.png'))
+        new_filelist = []
+        for file in self.filelist:
+            try:
+                io.imread(file)
+                new_filelist.append(file)
+            except:
+                pass
+                
+        self.filelist = new_filelist
+        
+    def __len__(self):
+        return len(self.filelist)
+        
+    def __getitem__(self, idx):
+        image = io.imread(self.filelist[idx])
+        image = PIL.Image.fromarray(image)
+        if self.transform:
+            return self.transform(image)
+        return None, image
 
 def make_datasets(bs=50, test_bs=4096, noise=0):
     train_loader = torch.utils.data.DataLoader(
@@ -89,6 +118,22 @@ def make_datasets_notmnist(bs=128, test_bs=100, shuffle=True):
             transform=transforms.ToTensor()), batch_size=test_bs, shuffle=shuffle)
 
     return None, notmnist_test_loader
+
+def normalize(data_tensor):
+    '''re-scale image values to [-1, 1]'''
+    return (data_tensor / 255.) * 2. - 1. 
+
+def make_datasets_svhn(bs=128, test_bs=100, shuffle=True):
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((.5, .5, .5), (.5, .5, .5)),
+    ])
+
+    test_loader = torch.utils.data.DataLoader(
+        datasets.SVHN('svhn_data', train=False, transform=transform_test),
+        batch_size=test_bs, shuffle=shuffle, num_workers=2)
+
+    return None, test_loader
 
 def _get_simultan_subsets_loader(trainset, batch_size):
     n_per_class = 6000
