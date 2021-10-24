@@ -43,6 +43,18 @@ class NotMnist(Dataset):
             return (self.transform(image), [])
         return (image, [])
 
+class LimitDataset(Dataset):
+    def __init__(self, dataset, n):
+        self.dataset = dataset
+        self.n = n
+
+    def __len__(self):
+        return self.n
+
+    def __getitem__(self, i):
+        return self.dataset[i]
+
+
 def make_datasets(bs=50, test_bs=4096, noise=0):
     train_loader = torch.utils.data.DataLoader(
         datasets.MNIST('mnist_data',
@@ -114,8 +126,9 @@ def make_datasets_cifar100(bs=128, test_bs=100, shuffle=True):
     return cifar100_training_loader, cifar100_test_loader
 
 def make_datasets_notmnist(bs=128, test_bs=100, shuffle=True):
-    notmnist_test_loader = torch.utils.data.DataLoader(NotMnist('notmnist_data',
-            transform=transforms.Compose([transforms.ToTensor()])), batch_size=test_bs, shuffle=shuffle)
+    ds = NotMnist('notmnist_data', transform=transforms.Compose([transforms.ToTensor()]))
+    limited_ds = LimitDataset(ds, 10000)
+    notmnist_test_loader = torch.utils.data.DataLoader(limited_ds, batch_size=test_bs, shuffle=shuffle)
 
     return None, notmnist_test_loader
 
@@ -129,8 +142,10 @@ def make_datasets_svhn(bs=128, test_bs=100, shuffle=True):
         transforms.Normalize((.5, .5, .5), (.5, .5, .5)),
     ])
 
+    ds = datasets.SVHN('svhn_data', split='test', download=True, transform=transform_test)
+    limited_ds = LimitDataset(ds, 10000)
     test_loader = torch.utils.data.DataLoader(
-        datasets.SVHN('svhn_data', train=False, transform=transform_test),
+        limited_ds,
         batch_size=test_bs, shuffle=shuffle, num_workers=2)
 
     return None, test_loader
