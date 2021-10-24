@@ -2,6 +2,7 @@ import torch.utils
 import random
 from torchvision import datasets, transforms
 from .preproc import NoiseTransform
+from .model import NotMnist
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -82,6 +83,12 @@ def make_datasets_cifar100(bs=128, test_bs=100, shuffle=True):
         cifar100_test, shuffle=shuffle, batch_size=test_bs)
 
     return cifar100_training_loader, cifar100_test_loader
+
+def make_datasets_notmnist(bs=128, test_bs=100, shuffle=True):
+    notmnist_test_loader = torch.utils.data.DataLoader(NotMnist('notmnist_data',
+            transform=transforms.ToTensor()), batch_size=test_bs, shuffle=shuffle)
+
+    return None, notmnist_test_loader
 
 def _get_simultan_subsets_loader(trainset, batch_size):
     n_per_class = 6000
