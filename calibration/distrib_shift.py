@@ -61,7 +61,7 @@ saved_pred_probs = {} # key=optimizer, value=array of predictive probabilities i
 saved_nll = {} # key=optimizer, value=array of NLL in rotations order
 
 session_id_prefix = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-stats_path = f'ood/stats_{session_id_prefix}.pt'
+stats_path = f'distrib_shift/stats_{session_id_prefix}.pt'
 f = open(f'distrib_shift/stats_{session_id_prefix}.txt', 'w')
 print(f'model: {model_arch}', file=f)
 print(f'dataset: {dataset}', file=f)
@@ -101,15 +101,15 @@ for optimizer in optimizers:
     saved_labels[optimizer] = []
     saved_pred_probs[optimizer] = []
 
-    pred_class_list = [] # list of class prediction
-    pred_probs = [] # list of confidence value
-    data_labels = [] # list of correct class
-    loss_list = [] # list of per batch NLL loss
-    entropy_list = [] # list of prediction entropy value
-    correct = 0
-    total = 0
-
     for rotate in rotations:
+        pred_class_list = [] # list of class prediction
+        pred_probs = [] # list of confidence value
+        data_labels = [] # list of correct class
+        loss_list = [] # list of per batch NLL loss
+        entropy_list = [] # list of prediction entropy value
+        correct = 0
+        total = 0
+        
         with torch.no_grad():
             for data, target in test_loader:
                 data = data.cuda()
