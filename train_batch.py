@@ -74,8 +74,9 @@ print('train batch size: ', train_batch, ', test batch size: ', test_batch)
 session_id_prefix = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 f = open(f'{save_model_path}/train_logs_{session_id_prefix}.txt', 'w')
 optimizers = config['optimizers']
-durations = []
 for optimizer_name in optimizers:
+    durations = []
+
     if dataset_name == "MNIST":
         # model = lib.model.MnistModel()
         model_name = config['model']
