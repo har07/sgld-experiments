@@ -146,7 +146,7 @@ for optimizer_name in optimizers:
 
             # exception for SGD: do not perform lr decay
             if optimizer_name == 'optim.SGD':
-                block_decay = 0
+                optimizer.step()
             elif block_size > 0 and block_decay > 0 and lr_param:
                 optimizer.step(lr=current_lr)
             else:
