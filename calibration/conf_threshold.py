@@ -80,7 +80,8 @@ for optimizer in optimizers:
     else:
         model = eval(model_arch)(output_logits=True)
         model = model.cuda()
-        _, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
+        # _, test_loader = lib.dataset.make_datasets_cifar10(bs=train_batch, test_bs=test_batch)
+        _, test_loader = eval(f'make_datasets_{dataset}')(bs=train_batch, test_bs=test_batch)
 
     models = []
     path_idxs = [i for i in range(nmodel_max, nmodel_max-nmodel, -1)]
