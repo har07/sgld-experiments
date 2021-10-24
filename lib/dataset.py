@@ -40,8 +40,8 @@ class NotMnist(Dataset):
         image = io.imread(self.filelist[idx])
         image = PIL.Image.fromarray(image)
         if self.transform:
-            return self.transform(image)
-        return None, image
+            return (self.transform(image), None)
+        return (image, None)
 
 def make_datasets(bs=50, test_bs=4096, noise=0):
     train_loader = torch.utils.data.DataLoader(
