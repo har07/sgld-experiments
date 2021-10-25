@@ -150,6 +150,10 @@ for optimizer in optimizers:
         print(total)
         saved_accuracies[optimizer].append(val_acc)
 
+        saved_pred_probs[optimizer].append(pred_probs_soft.numpy())
+        saved_labels[optimizer].append(target.numpy())
+        saved_nll[optimizer].append(loss_list)
+
 torch.save({
             'rotations': rotations,
             'accuracies': saved_accuracies,
