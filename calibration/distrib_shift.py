@@ -100,6 +100,7 @@ for optimizer in optimizers:
     saved_accuracies[optimizer] = [] # list of accuracies
     saved_labels[optimizer] = []
     saved_pred_probs[optimizer] = []
+    saved_nll[optimizer] = []
 
     for rotate in rotations:
         pred_class_list = [] # list of class prediction
