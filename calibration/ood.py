@@ -83,6 +83,7 @@ for optimizer in optimizers:
     # only use last checkpoint if SGD
     if optimizer == "SGD":
         path_idxs = [nmodel_max]
+        nmodel = 1
 
     path_idxs = sorted(path_idxs)
     for path_idx in path_idxs:
